@@ -1,4 +1,4 @@
-from math import acos, cos, sin, radians
+from math import cos, sin, degrees as d, radians, atan
 
 
 class Direction:
@@ -16,13 +16,16 @@ class Direction:
 
     def turn(self, degrees, direction):
         """
-        Turn the object counterclockwise in degrees
+        Turn the object in degrees. Left is counterclockwise and right is clockwise.
         :param degrees: How many to turn in degrees.
         :param direction: Direction to turn. Must be 1 (left) or -1 (right).
         """
-        angle = acos(self.x) + radians(degrees * direction)
+        angle = radians((d(atan(self.y/self.x)) + degrees * direction) % 360)
         self.x = cos(angle)
         self.y = sin(angle)
+
+    def __eq__(self, other):
+        return self.x == other.x and self.y == other.y
 
 
 class UnProperDirectionException(Exception):
