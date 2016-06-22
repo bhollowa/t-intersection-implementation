@@ -1,6 +1,6 @@
 import unittest
-from models.car import Car, ExceedMaximumSpeedError
-from models.direction import Direction, UnProperDirectionException
+from models.car import Car, ExceedCarMaximumSpeedError
+from models.direction import Direction
 
 SECONDS = 1000.0
 
@@ -24,7 +24,7 @@ class TestCar(unittest.TestCase):
         self.assertEqual(new_car.pos_y, 50)
         self.assertEqual(new_car.absolute_speed, 17)
         self.assertEqual(new_car.direction, Direction(0, -1))
-        self.assertRaises(ExceedMaximumSpeedError, Car, 0, 0, 30)
+        self.assertRaises(ExceedCarMaximumSpeedError, Car, 0, 0, 30)
 
     def test_move_car(self):
 
@@ -74,7 +74,7 @@ class TestCar(unittest.TestCase):
         self.assertEqual(new_car.pos_x, - 75.0 / 2.0 * degrees)
         self.assertEqual(new_car.pos_y, - 75.0 / 2.0 * degrees)
 
-        self.assertRaises(ExceedMaximumSpeedError, new_car.accelerate, 10, SECONDS)
+        self.assertRaises(ExceedCarMaximumSpeedError, new_car.accelerate, 10, SECONDS)
 
 
 if __name__ == '__main__':
