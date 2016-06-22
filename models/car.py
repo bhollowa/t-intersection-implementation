@@ -21,6 +21,9 @@ class Car:
     def accelerate(self, quantity, time_unit):
         total_distance = self.acceleration * quantity ** 2 * time_unit / (self.SECONDS * 2) + \
                          self.absolute_speed * quantity * time_unit / self.SECONDS
+        new_speed = self.absolute_speed + self.acceleration * quantity * time_unit / self.SECONDS
+        if new_speed > self.max_absolute_speed:
+            raise ExceedMaximumSpeedError
         self.absolute_speed += self.acceleration * quantity * time_unit / self.SECONDS
         self.pos_x += total_distance * self.direction.x
         self.pos_y += total_distance * self.direction.y
