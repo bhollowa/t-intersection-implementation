@@ -74,6 +74,8 @@ class TestCar(unittest.TestCase):
         self.assertEqual(new_car.pos_x, - 75.0 / 2.0 * degrees)
         self.assertEqual(new_car.pos_y, - 75.0 / 2.0 * degrees)
 
+        self.assertRaises(ExceedMaximumSpeedError, new_car.accelerate, 10, SECONDS)
+
 
 if __name__ == '__main__':
     unittest.main()
