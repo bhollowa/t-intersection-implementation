@@ -7,9 +7,10 @@ class Car:
     of movement, the total movement will be escalated into x and y with the direction.
     Also, the car has a fixed acceleration and maximum speed.
     """
-    SECONDS = 1000.0
-    max_absolute_speed = 120.0  # In meters/seconds.
-    acceleration = 3.0  # In meters/seconds*seconds.
+    SECONDS = 1000.0  # TODO: should this be here?
+    max_absolute_speed = 120.0  # meters/seconds.
+    acceleration_rate = 3.0  # meters/seconds*seconds.
+    brake_deceleration_rate = 4  # meters/seconds*seconds.
 
     def __init__(self, pos_x=0.0, pos_y=0.0, absolute_speed=0.0, direction=Direction()):
         """
@@ -40,21 +41,41 @@ class Car:
 
     def accelerate(self, quantity, time_unit):
         """
-        Function to accelerate a car. Exception raised if maximum speed is reached or surprassed. Time unit is necessary
+        Function to accelerate a car. Exception raised if maximum speed is reached or surpassed. Time unit is necessary
          to work in milliseconds. Seconds = 1000.
         :param quantity: how many unit of times the car must accelerate.
         :param time_unit: unit of time in which the car will accelerate (seconds = 1000)
         :return: None
         """
-        total_distance = self.acceleration * quantity ** 2 * time_unit / (self.SECONDS * 2) + \
+        total_distance = self.acceleration_rate * quantity ** 2 * time_unit / (self.SECONDS * 2) + \
             self.absolute_speed * quantity * time_unit / self.SECONDS
-        new_speed = self.absolute_speed + self.acceleration * quantity * time_unit / self.SECONDS
+        new_speed = self.absolute_speed + self.acceleration_rate * quantity * time_unit / self.SECONDS
         if new_speed > self.max_absolute_speed:
             raise ExceedCarMaximumSpeedError
-        self.absolute_speed += self.acceleration * quantity * time_unit / self.SECONDS
+        self.absolute_speed += self.acceleration_rate * quantity * time_unit / self.SECONDS
         self.pos_x += total_distance * self.direction.x
         self.pos_y += total_distance * self.direction.y
 
+    def brake_decelerate(self, quantity, time_unit):
+        """
+        Function to decelerate the car. This function can only reach minimum speed of 0.
+        :param quantity: how many unit of times the car must accelerate.
+        :param time_unit: unit of time in which the car will accelerate (seconds = 1000)
+        :return: None
+        """
+        actual_speed = self.absolute_speed
+        new_speed = self.absolute_speed - self.brake_deceleration_rate * quantity * time_unit / self.SECONDS
+        if new_speed < 0:
+            raise StopSpeedReached
+        self.absolute_speed = new_speed
+        traveled_distance = (actual_speed ** 2 - self.absolute_speed ** 2) / (2 * self.brake_deceleration_rate)
+        self.pos_x += traveled_distance * self.direction.x
+        self.pos_y += traveled_distance * self.direction.y
+
 
 class ExceedCarMaximumSpeedError(Exception):
+    pass
+
+
+class StopSpeedReached(Exception):
     pass
