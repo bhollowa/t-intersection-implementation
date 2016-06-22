@@ -12,14 +12,18 @@ class TestDirection(unittest.TestCase):
     def tearDown(self):
         self.direction = Direction()
 
-    def test_create_default_direction(self):
+    def test_create_direction(self):
         self.assertEqual(self.direction.x, 1)
         self.assertEqual(self.direction.y, 0)
 
-    def test_create_direction(self):
         direction = Direction(0, 1)
         self.assertEqual(direction.x, 0)
         self.assertEqual(direction.y, 1)
+
+        degrees = 2.0 ** (1.0 / 2) / 2.0
+        direction = Direction(degrees, -degrees)
+        self.assertEqual(direction.x, degrees)
+        self.assertEqual(direction.y, -degrees)
 
     def test_create_bad_direction(self):
         self.assertRaises(UnProperDirectionException, Direction, 1, 1)
