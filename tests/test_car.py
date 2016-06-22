@@ -94,5 +94,15 @@ class TestCar(unittest.TestCase):
         self.assertEqual(new_car.pos_x, - 112.0 * self.degrees)
         self.assertEqual(new_car.pos_y, - 112.0 * self.degrees)
 
+    def test_start_go_stop(self):
+
+        self.car.accelerate(4, self.car.SECONDS)
+        self.car.move(10, self.car.SECONDS)
+        self.car.brake_decelerate(3, self.car.SECONDS)
+        self.assertEqual(self.car.absolute_speed, 0)
+        self.assertEqual(self.car.pos_x, 162)
+        self.assertEqual(self.car.pos_y, 0)
+
+
 if __name__ == '__main__':
     unittest.main()
