@@ -18,6 +18,13 @@ class Car:
         self.pos_x += self.direction.x * self.absolute_speed * quantity * time_unit / self.SECONDS
         self.pos_y += self.direction.y * self.absolute_speed * quantity * time_unit / self.SECONDS
 
+    def accelerate(self, quantity, time_unit):
+        total_distance = self.acceleration * quantity ** 2 * time_unit / (self.SECONDS * 2) + \
+                         self.absolute_speed * quantity * time_unit / self.SECONDS
+        self.absolute_speed += self.acceleration * quantity * time_unit / self.SECONDS
+        self.pos_x += total_distance * self.direction.x
+        self.pos_y += total_distance * self.direction.y
+
 
 class ExceedMaximumSpeedError(Exception):
     pass
