@@ -42,15 +42,37 @@ class TestCar(unittest.TestCase):
         self.assertEqual(new_car.pos_x, -50)
         self.assertEqual(new_car.pos_y, 0)
 
-        degrees = 2.0**(1.0/2)/2.0
+        degrees = 2.0 ** (1.0 / 2) / 2.0
         new_car = Car(absolute_speed=10, direction=Direction(degrees, -degrees))
         new_car.move(5.0, SECONDS)
-        new_pos = degrees*5.0*10
+        new_pos = degrees * 5.0 * 10
         self.assertEqual(new_car.pos_x, new_pos)
         self.assertEqual(new_car.pos_y, -new_pos)
 
+    def test_accelerate_car(self):
 
+        self.car.accelerate(1.0, SECONDS)
+        self.assertEqual(self.car.absolute_speed, 3)
+        self.assertEqual(self.car.pos_x, 3.0 / 2.0)
+        self.assertEqual(self.car.pos_y, 0)
 
+        self.car.accelerate(1.0, SECONDS)
+        self.assertEqual(self.car.absolute_speed, 6)
+        self.assertEqual(self.car.pos_x, 6)
+        self.assertEqual(self.car.pos_y, 0)
+
+        degrees = 2.0 ** (1.0 / 2) / 2.0
+        new_car = Car(direction=Direction(degrees, degrees))
+        new_car.accelerate(5.0, SECONDS)
+        self.assertEqual(new_car.absolute_speed, 15)
+        self.assertEqual(new_car.pos_x, 75.0 / 2.0 * degrees)
+        self.assertEqual(new_car.pos_y, 75.0 / 2.0 * degrees)
+
+        new_car = Car(direction=Direction(-degrees, -degrees))
+        new_car.accelerate(5.0, SECONDS)
+        self.assertEqual(new_car.absolute_speed, 15)
+        self.assertEqual(new_car.pos_x, - 75.0 / 2.0 * degrees)
+        self.assertEqual(new_car.pos_y, - 75.0 / 2.0 * degrees)
 
 
 if __name__ == '__main__':
