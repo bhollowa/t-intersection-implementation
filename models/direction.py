@@ -2,6 +2,10 @@ from math import cos, sin, degrees as d, radians, atan
 
 
 class Direction:
+    """
+    Direction represented by the bases of a square triangle. It can turn describing a circular shape, like in polar
+    coordinates with constant radius of length 1.
+    """
 
     def __init__(self, x=1.0, y=0.0):
         """
