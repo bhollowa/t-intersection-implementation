@@ -1,4 +1,5 @@
 from models.direction import Direction
+from math import tan, radians, pi, degrees as d, cos, sin
 
 
 class Car:
@@ -11,6 +12,9 @@ class Car:
     max_absolute_speed = 120.0  # meters/seconds.
     acceleration_rate = 3.0  # meters/seconds*seconds.
     brake_deceleration_rate = 4  # meters/seconds*seconds.
+    max_turning_speed = 14.0  # meters/seconds.
+    maximum_turning_degrees = 45  # degrees.
+    large = 4  # meters
 
     def __init__(self, pos_x=0.0, pos_y=0.0, absolute_speed=0.0, direction=Direction()):
         """
@@ -28,12 +32,16 @@ class Car:
         self.absolute_speed = absolute_speed
         self.direction = direction
 
+    def __str__(self):
+        return "Actual speed: " + str(self.absolute_speed) + " x position: " + str(self.pos_x) + " y position: " + \
+               str(self.pos_y) + " direction: " + str(self.direction)
+
     def move(self, quantity, time_unit):
         """
         Function to move a car. If its speed its 0, it'll not move. Time unit is necessary to work in milliseconds.
         Seconds = 1000.
         :param quantity: how many unit of times the car must move.
-        :param time_unit: unit of time in which the car will move (seconds = 1000)
+        :param time_unit: unit of time in which the car will move (seconds = 1000).
         :return: None
         """
         self.pos_x += self.direction.x * self.absolute_speed * quantity * time_unit / self.SECONDS
@@ -44,7 +52,7 @@ class Car:
         Function to accelerate a car. Exception raised if maximum speed is reached or surpassed. Time unit is necessary
          to work in milliseconds. Seconds = 1000.
         :param quantity: how many unit of times the car must accelerate.
-        :param time_unit: unit of time in which the car will accelerate (seconds = 1000)
+        :param time_unit: unit of time in which the car will accelerate (seconds = 1000).
         :return: None
         """
         total_distance = self.acceleration_rate * quantity ** 2 * time_unit / (self.SECONDS * 2) + \
@@ -58,9 +66,9 @@ class Car:
 
     def brake_decelerate(self, quantity, time_unit):
         """
-        Function to decelerate the car. This function can only reach minimum speed of 0.
+        Decelerate the car. This function can only reach minimum speed of 0.
         :param quantity: how many unit of times the car must accelerate.
-        :param time_unit: unit of time in which the car will accelerate (seconds = 1000)
+        :param time_unit: unit of time in which the car will accelerate (seconds = 1000).
         :return: None
         """
         actual_speed = self.absolute_speed
@@ -72,10 +80,42 @@ class Car:
         self.pos_x += traveled_distance * self.direction.x
         self.pos_y += traveled_distance * self.direction.y
 
+    def turn(self, quantity, time_unit, wheel_angle):
+        """
+        Turn the car. It will modify its direction, pos_x and pos_y. A car can only turn if its moving and has a speed
+        adn turn limit for this.
+        :param quantity: how many unit of times the car must accelerate.
+        :param time_unit: unit of time in which the car will accelerate (seconds = 1000).
+        :param wheel_angle: in how many degrees the car must turn. Maximum of 45 (to left or right).
+        :return: None
+        """
+        if self.absolute_speed == 0:
+            pass
+        else:
+            if wheel_angle > self.maximum_turning_degrees:
+                raise ExceedWheelTurningException
+            if self.absolute_speed > self.max_turning_speed:
+                raise ExceedTurningSpeedException
+            radius = abs(self.large / tan(radians(wheel_angle)))
+            total_distance_traveled = self.absolute_speed * quantity * time_unit / self.SECONDS
+            circle_position = total_distance_traveled % (2 * pi * radius)
+            turning_degrees = circle_position / radius
+            self.direction.turn(abs(d(turning_degrees)), wheel_angle / abs(wheel_angle))
+            self.pos_x += (self.direction.x / abs(self.direction.x)) * radius * sin(turning_degrees)
+            self.pos_y += (self.direction.y / abs(self.direction.y)) * (-radius * cos(turning_degrees) + radius)
+
 
 class ExceedCarMaximumSpeedError(Exception):
     pass
 
 
 class StopSpeedReached(Exception):
+    pass
+
+
+class ExceedWheelTurningException(Exception):
+    pass
+
+
+class ExceedTurningSpeedException(Exception):
     pass
