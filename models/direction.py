@@ -14,10 +14,10 @@ class Direction:
         :param y: Value of the x axis.
         :param angle: Value of the angle in which the object is pointing (counterclockwise from the x axis.
         """
-        if int(x**2 + y**2) != int(1.0):
+        if int(x ** 2 + y ** 2) != int(1.0):
             raise UnProperDirectionException
         if x != 0:
-            if d(atan(y / x)) != angle:
+            if not isclose(d(atan(y / x)) % 180, angle % 180):
                 raise NotEqualAngleException
         self.x = x
         self.y = y
@@ -39,6 +39,10 @@ class Direction:
 
     def __str__(self):
         return 'posx: ' + str(self.x) + ' posy: ' + str(self.y) + ' angle: ' + str(self.angle)
+
+
+def isclose(a, b, rel_tol=1e-09, abs_tol=0.0):  # TODO move from here
+    return abs(a - b) <= max(rel_tol * max(abs(a), abs(b)), abs_tol)
 
 
 class UnProperDirectionException(Exception):
