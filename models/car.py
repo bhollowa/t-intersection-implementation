@@ -1,5 +1,5 @@
-from models.direction import Direction
-from math import tan, radians, pi, degrees as d, cos, sin
+from math import tan, radians, pi, degrees as deg, cos, sin
+from pygame import Rect, image, transform
 
 
 class Car:
@@ -9,14 +9,14 @@ class Car:
     Also, the car has a fixed acceleration and maximum speed.
     """
     SECONDS = 1000.0  # TODO: should this be here?
-    max_absolute_speed = 120.0  # meters/seconds.
+    max_absolute_speed = 12.0  # meters/10*seconds.
     acceleration_rate = 3.0  # meters/seconds*seconds.
     brake_deceleration_rate = 4  # meters/seconds*seconds.
     max_turning_speed = 14.0  # meters/seconds.
     maximum_turning_degrees = 45  # degrees.
-    large = 4  # meters
+    length = 4  # meters
 
-    def __init__(self, pos_x=0.0, pos_y=0.0, absolute_speed=0.0, direction=Direction()):
+    def __init__(self, pos_x=0.0, pos_y=0.0, car_image=image.load("car.png"), absolute_speed=0.0, direction=0):
         """
         Initializer of a car. It can be placed anywhere looking in any direction with any speed under the car maximum
         speed.
@@ -27,10 +27,12 @@ class Car:
         """
         self.pos_x = pos_x
         self.pos_y = pos_y
+        self.image = car_image
         if abs(absolute_speed) > self.max_absolute_speed:
-            raise ExceedCarMaximumSpeedError
+            raise self.ExceedCarMaximumSpeedError
         self.absolute_speed = absolute_speed
         self.direction = direction
+        self.rect = Rect(pos_x, pos_y, 100, 100)
 
     def __str__(self):
         return "Actual speed: " + str(self.absolute_speed) + " x position: " + str(self.pos_x) + " y position: " + \
@@ -44,8 +46,9 @@ class Car:
         :param time_unit: unit of time in which the car will move (seconds = 1000).
         :return: None
         """
-        self.pos_x += self.direction.x * self.absolute_speed * quantity * time_unit / self.SECONDS
-        self.pos_y += self.direction.y * self.absolute_speed * quantity * time_unit / self.SECONDS
+        rad = self.direction * pi / 180
+        self.pos_x += -sin(rad) * self.absolute_speed * quantity * time_unit / self.SECONDS
+        self.pos_y += -cos(rad) * self.absolute_speed * quantity * time_unit / self.SECONDS
 
     def accelerate(self, quantity, time_unit):
         """
@@ -55,14 +58,15 @@ class Car:
         :param time_unit: unit of time in which the car will accelerate (seconds = 1000).
         :return: None
         """
-        total_distance = self.acceleration_rate * quantity ** 2 * time_unit / (self.SECONDS * 2) + \
-            self.absolute_speed * quantity * time_unit / self.SECONDS
+        # total_distance = self.acceleration_rate * quantity ** 2 * time_unit / (self.SECONDS * 2) + \
+        #    self.absolute_speed * quantity * time_unit / self.SECONDS
         new_speed = self.absolute_speed + self.acceleration_rate * quantity * time_unit / self.SECONDS
         if new_speed > self.max_absolute_speed:
-            raise ExceedCarMaximumSpeedError
-        self.absolute_speed += self.acceleration_rate * quantity * time_unit / self.SECONDS
-        self.pos_x += total_distance * self.direction.x
-        self.pos_y += total_distance * self.direction.y
+            self.absolute_speed = self.max_absolute_speed
+        else:
+            self.absolute_speed = new_speed
+        # self.pos_x += total_distance * self.direction.x
+        # self.pos_y += total_distance * self.direction.y
 
     def brake_decelerate(self, quantity, time_unit):
         """
@@ -74,7 +78,7 @@ class Car:
         actual_speed = self.absolute_speed
         new_speed = self.absolute_speed - self.brake_deceleration_rate * quantity * time_unit / self.SECONDS
         if new_speed < 0:
-            raise StopSpeedReached
+            raise self.StopSpeedReached
         self.absolute_speed = new_speed
         traveled_distance = (actual_speed ** 2 - self.absolute_speed ** 2) / (2 * self.brake_deceleration_rate)
         self.pos_x += traveled_distance * self.direction.x
@@ -93,29 +97,46 @@ class Car:
             pass
         else:
             if wheel_angle > self.maximum_turning_degrees:
-                raise ExceedWheelTurningException
+                raise self.ExceedWheelTurningException
             if self.absolute_speed > self.max_turning_speed:
-                raise ExceedTurningSpeedException
-            radius = abs(self.large / tan(radians(wheel_angle)))
+                raise self.ExceedTurningSpeedException
+            radius = abs(self.length / tan(radians(wheel_angle)))
             total_distance_traveled = self.absolute_speed * quantity * time_unit / self.SECONDS
             circle_position = total_distance_traveled % (2 * pi * radius)
             turning_degrees = circle_position / radius
-            self.direction.turn(abs(d(turning_degrees)), wheel_angle / abs(wheel_angle))
+            self.direction.turn(abs(deg(turning_degrees)), wheel_angle / abs(wheel_angle))
             self.pos_x += (self.direction.x / abs(self.direction.x)) * radius * sin(turning_degrees)
             self.pos_y += (self.direction.y / abs(self.direction.y)) * (-radius * cos(turning_degrees) + radius)
 
+    def position(self):
+        return self.pos_x, self.pos_y
 
-class ExceedCarMaximumSpeedError(Exception):
-    pass
+    def update_position(self, position):
+        self.pos_x = position[0]
+        self.pos_y = position[1]
 
+    def update(self, right, left, up, down):
+        self.accelerate(1000/120*(up+down), 1)
+        self.direction += (right + left)
+        self.move(1000/120, 50)
+        self.rotated_image = transform.rotate(self.image, self.direction)
+        self.rotated_image = transform.scale(self.rotated_image, (
+        int(self.rotated_image.get_rect().w * 0.15), int(self.rotated_image.get_rect().h * 0.15)))
+        # .. position the car on screen
+        self.screen_car = self.rotated_image.get_rect()
+        self.screen_car.center = self.position()
 
-class StopSpeedReached(Exception):
-    pass
+    class ExceedCarMaximumSpeedError(Exception):
+        pass
 
+    class StopSpeedReached(Exception):
+        pass
 
-class ExceedWheelTurningException(Exception):
-    pass
+    class ExceedWheelTurningException(Exception):
+        pass
 
+    class ExceedTurningSpeedException(Exception):
+        pass
 
-class ExceedTurningSpeedException(Exception):
-    pass
+    class CollideWithCarException(Exception):
+        pass

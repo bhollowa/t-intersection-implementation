@@ -1,8 +1,6 @@
 import unittest
-from models.car import Car, ExceedCarMaximumSpeedError, StopSpeedReached, ExceedTurningSpeedException, \
-    ExceedWheelTurningException
+from models.car import Car
 from models.direction import Direction
-from math import pi
 
 
 class TestCar(unittest.TestCase):
@@ -25,7 +23,7 @@ class TestCar(unittest.TestCase):
         self.assertEqual(new_car.pos_y, 50)
         self.assertEqual(new_car.absolute_speed, 17)
         self.assertEqual(new_car.direction, Direction(0, -1))
-        self.assertRaises(ExceedCarMaximumSpeedError, Car, 0, 0, 121)
+        self.assertRaises(Car.ExceedCarMaximumSpeedError, Car, 0, 0, 121)
 
     def test_move_car(self):
 
@@ -73,11 +71,11 @@ class TestCar(unittest.TestCase):
         self.assertEqual(new_car.pos_x, - 75.0 / 2.0 * self.degrees)
         self.assertEqual(new_car.pos_y, - 75.0 / 2.0 * self.degrees)
 
-        self.assertRaises(ExceedCarMaximumSpeedError, new_car.accelerate, 40, new_car.SECONDS)
+        self.assertRaises(Car.ExceedCarMaximumSpeedError, new_car.accelerate, 40, new_car.SECONDS)
 
     def test_decelerate_car(self):
 
-        self.assertRaises(StopSpeedReached, self.car.brake_decelerate, 1, self.car.SECONDS)
+        self.assertRaises(Car.StopSpeedReached, self.car.brake_decelerate, 1, self.car.SECONDS)
 
         new_car = Car(absolute_speed=30)
         new_car.brake_decelerate(1, new_car.SECONDS)
@@ -114,8 +112,8 @@ class TestCar(unittest.TestCase):
         self.assertEqual(self.car.pos_y, 0)
 
         self.car.accelerate(5, self.car.SECONDS)
-        self.assertRaises(ExceedWheelTurningException, self.car.turn, 5, self.car.SECONDS, 90)
-        self.assertRaises(ExceedTurningSpeedException, self.car.turn, 5, self.car.SECONDS, 45)
+        self.assertRaises(Car.ExceedWheelTurningException, self.car.turn, 5, self.car.SECONDS, 90)
+        self.assertRaises(Car.ExceedTurningSpeedException, self.car.turn, 5, self.car.SECONDS, 45)
 
         new_car = Car(absolute_speed=10)
         new_car.turn(0.627, self.car.SECONDS, 45)
