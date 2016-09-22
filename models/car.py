@@ -1,4 +1,4 @@
-from math import tan, radians, pi, degrees as deg, cos, sin, sqrt, pow
+from math import pi, cos, sin, sqrt, pow
 from pygame import image, transform
 from models.message import Message
 
