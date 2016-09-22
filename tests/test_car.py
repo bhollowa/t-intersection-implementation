@@ -15,7 +15,7 @@ class TestCar(unittest.TestCase):
         self.assertEqual(self.car.pos_y, 0)
         self.assertEqual(self.car.absolute_speed, 0)
         self.assertEqual(self.car.direction, Direction())
-        self.assertEqual(self.car.max_absolute_speed, 120.0)
+        self.assertEqual(self.car.max_forward_speed, 120.0)
         self.assertEqual(self.car.acceleration_rate, 3)
 
         new_car = Car(50, 50, 17, Direction(0, -1))
