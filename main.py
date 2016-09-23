@@ -3,9 +3,11 @@ from models.car import Car
 from car_controllers.supervisor_level import supervisor_level
 from random import randint
 from models.auxiliar_functions import check_close_application
+import os
 
+images_directory = os.getcwd() + "/images/"
 screen = pygame.display.set_mode((768, 768))
-bg = pygame.image.load("background.jpg")
+bg = pygame.image.load(images_directory + "background.jpg")
 initial_positions = [(430, 700, 0, 1), (760, 350, 90, 2), (350, 10, 180, 3), (10, 430, 270, 4)]
 new_cars = []
 cars = []
@@ -28,7 +30,7 @@ def random_car(config, name):
 if __name__ == "__main__":
     while iteration:
         counter += 1
-        if counter % 40 == 0:
+        if counter % 35 == 0:
             new_cars.append(random_car(initial_positions[randint(0, len(initial_positions) - 1)], counter))
             new_car = True
         if new_car:
@@ -36,7 +38,6 @@ if __name__ == "__main__":
             new_car = False
         events = pygame.event.get()
         iteration = check_close_application(events)
-        clock.tick(FPS)
         for car in cars:
             if not car.screen_car.colliderect(screen.get_rect()):
                 cars.remove(car)
@@ -50,5 +51,5 @@ if __name__ == "__main__":
             pygame.display.update()
             inputs = (0, 0, 0, 0)
         screen.blit(bg, (0, 0))
-        pygame.display.update(screen_cars)
         screen_cars = []
+        clock.tick(FPS)

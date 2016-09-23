@@ -1,6 +1,9 @@
 from math import pi, cos, sin, sqrt, pow
 from pygame import image, transform
 from models.message import Message
+import os
+
+images_directory = os.getcwd() + "/images/"
 
 
 class Car:
@@ -19,7 +22,7 @@ class Car:
     length = 4  # meters
     message = None
 
-    def __init__(self, name, pos_x=0.0, pos_y=0.0, car_image=image.load("car.png"), absolute_speed=0.0, direction=0, lane=1):
+    def __init__(self, name, pos_x=0.0, pos_y=0.0, car_image=image.load(images_directory + "car.png"), absolute_speed=0.0, direction=0, lane=1):
         """
         Initializer of a car. It can be placed anywhere looking in any direction with any speed under the car maximum
         speed.
