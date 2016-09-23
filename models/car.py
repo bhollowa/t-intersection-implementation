@@ -10,7 +10,7 @@ class Car:
     Also, the car has a fixed acceleration and maximum speed.
     """
     SECONDS = 1000.0  # TODO: should this be here?
-    max_forward_speed = 40.0  # meters/10*seconds.
+    max_forward_speed = 30.0  # meters/10*seconds.
     max_backward_speed = -20.0  # meters/10*seconds.
     acceleration_rate = 3.0  # meters/seconds*seconds.
     brake_deceleration_rate = 4  # meters/seconds*seconds.
@@ -42,6 +42,7 @@ class Car:
         self.screen_car.center = self.get_position()
         self.absolute_speed = absolute_speed
         self.follower_cars = []
+        self.follow = False
 
     def __str__(self):
         return self.name
@@ -69,8 +70,8 @@ class Car:
         new_speed = self.absolute_speed + self.acceleration_rate * quantity * time_unit / self.SECONDS
         if new_speed > self.max_forward_speed:
             self.absolute_speed = self.max_forward_speed
-        elif new_speed < self.max_backward_speed:
-            self.absolute_speed = self.max_backward_speed
+        elif new_speed < 0:
+            self.absolute_speed = 0
         else:
             self.absolute_speed = new_speed
 
@@ -145,6 +146,12 @@ class Car:
 
     def get_followers(self):
         return self.follower_cars
+
+    def stop_following(self):
+        self.follow = False
+
+    def start_following(self):
+        self.follow = True
 
     class ExceedCarMaximumSpeedError(Exception):
         pass
