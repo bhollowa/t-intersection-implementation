@@ -48,7 +48,7 @@ class Car:
         self.follow = False
 
     def __str__(self):
-        return self.name
+        return "Auto " + self.name + " a " + str(self.absolute_speed) + " velocidad"
 
     def move(self, quantity, time_unit):
         """
