@@ -40,9 +40,9 @@ def check_close_application(user_input):
     return True
 
 
-def random_car( name):
+def random_car(name, max_speed):
     pos_x, pos_y, direction, lane = initial_positions[randint(0, len(initial_positions) - 1)]
-    initial_speed = randint(0, 30)
+    initial_speed = randint(0, max_speed)
     return Car(str(name), pos_x, pos_y, direction=direction, lane=lane, absolute_speed=initial_speed)
 
 

@@ -28,7 +28,7 @@ if __name__ == "__main__":
     while iteration:
         counter += 1
         if counter % (60/cars_per_second) == 0:
-            new_cars.append(random_car(car_name_counter))
+            new_cars.append(random_car(car_name_counter, 20))
             car_name_counter += 1
             new_car = True
         if new_car:
