@@ -4,8 +4,8 @@ from models.car import Car
 from random import randint
 
 
-white = (255,255,255)
-black = (0,0,0)
+white = (255, 255, 255)
+black = (0, 0, 0)
 initial_positions = [(430, 700, 0, 1), (760, 350, 90, 2), (350, 10, 180, 3), (10, 430, 270, 4)]
 
 
@@ -50,7 +50,8 @@ def colliding_cars(car_list):
     for i in range(len(car_list)):
         for j in range(i+1,len(car_list)):
             if car_list[i].screen_car.colliderect(car_list[j].screen_car):
-                return True
+                return (car_list[i], car_list[j]), True
+    return None, False
 
 
 def display_name_and_followers(rect, display, letter):

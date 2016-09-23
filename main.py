@@ -51,6 +51,7 @@ if __name__ == "__main__":
             inputs = (0, 0, 0, 0)
         screen.blit(bg, (0, 0))
         screen_cars = []
-        if colliding_cars(cars):
+        cars, collide = colliding_cars(cars)
+        if collide:
             pygame.time.wait(3000)
         clock.tick(FPS)
