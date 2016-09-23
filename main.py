@@ -26,6 +26,12 @@ def random_car(config, name):
     initial_speed = randint(0, 30)
     return Car("auto numero " + str(name / 50), pos_x, pos_y, direction=direction, lane=lane, absolute_speed=initial_speed)
 
+def colliding_cars(car_list):
+    for i in range(len(car_list)):
+        for j in range(i+1,len(car_list)):
+            if car_list[i].screen_car.colliderect(car_list[j].screen_car):
+                return True
+
 
 if __name__ == "__main__":
     while iteration:
@@ -52,4 +58,6 @@ if __name__ == "__main__":
             inputs = (0, 0, 0, 0)
         screen.blit(bg, (0, 0))
         screen_cars = []
+        if colliding_cars(cars):
+            pygame.time.wait(1000)
         clock.tick(FPS)
