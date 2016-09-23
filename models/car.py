@@ -13,7 +13,7 @@ class Car:
     Also, the car has a fixed acceleration and maximum speed.
     """
     SECONDS = 1000.0  # TODO: should this be here?
-    max_forward_speed = 30.0  # meters/10*seconds.
+    max_forward_speed = 20.0  # meters/10*seconds.
     max_backward_speed = -20.0  # meters/10*seconds.
     acceleration_rate = 3.0  # meters/seconds*seconds.
     brake_deceleration_rate = 4  # meters/seconds*seconds.
@@ -127,7 +127,10 @@ class Car:
             return True
 
     def distance_to_center(self):
-        sign = cos(self.direction * pi / 180)*(self.pos_y - 384)/abs(self.pos_y - 384) + sin(self.direction * pi / 180)*(self.pos_x - 384)/abs(self.pos_x - 384)
+        x = 1 if self.pos_x % 384 == 0 else 0
+        y = 1 if self.pos_y % 384 == 0 else 0
+        sign = cos(self.direction * pi / 180) * (self.pos_y - 384) / abs(self.pos_y - 384 + y) + sin(
+            self.direction * pi / 180) * (self.pos_x - 384) / abs(self.pos_x - 384 + x)
         return sign*sqrt(pow(self.pos_x - 384,2) + pow(self.pos_y - 384, 2))
 
     def send_message(self):

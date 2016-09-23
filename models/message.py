@@ -7,5 +7,7 @@ class Message:
         self.speed = car.get_speed()
 
     def distance_to_center(self):
-        sign = cos(self.direction * pi / 180)*(self.pos_y - 384)/abs(self.pos_y - 384) + sin(self.direction * pi / 180)*(self.pos_x - 384)/abs(self.pos_x - 384)
+        x = 1 if self.pos_x % 384 == 0 else 0
+        y = 1 if self.pos_y % 384 == 0 else 0
+        sign = cos(self.direction * pi / 180)*(self.pos_y - 384)/abs(self.pos_y - 384 + y) + sin(self.direction * pi / 180)*(self.pos_x - 384)/abs(self.pos_x - 384 + x)
         return sign*sqrt(pow(self.pos_x - 384,2) + pow(self.pos_y - 384, 2))
