@@ -1,7 +1,7 @@
 import os
 import pygame
 
-from auxiliar_functions import check_close_application, random_car, colliding_cars, display_name_and_followers
+from auxiliar_functions import check_close_application, random_car, colliding_cars
 from car_controllers.supervisor_level import supervisor_level
 
 images_directory = os.getcwd() + "/images/"
@@ -13,7 +13,7 @@ clock = pygame.time.Clock()
 inputs = (0, 0, 0, 0)
 iteration = True
 new_car = False
-
+intersection = pygame.Rect(280, 280, 210, 210)
 FPS = 60
 counter = 0
 screen_cars = []
@@ -46,12 +46,13 @@ if __name__ == "__main__":
             car.update(*inputs)
             screen_cars.append(car.screen_car)
             screen.blit(car.rotated_image, car.screen_car)
-            display_name_and_followers(car, screen, font)
             pygame.display.update()
             inputs = (0, 0, 0, 0)
         screen.blit(bg, (0, 0))
         screen_cars = []
-        cars, collide = colliding_cars(cars)
-        if collide:
+        collided_cars, collide = colliding_cars(cars)
+        if collide and collided_cars[0].screen_car.colliderect(intersection):
+            for car in collided_cars:
+                print car
             pygame.time.wait(3000)
         clock.tick(FPS)

@@ -112,9 +112,9 @@ class Car:
         self.screen_car.center = self.get_position()
 
     def update(self, right, left, up, down):
-        self.accelerate(1000/120*(up+down), 1)
+        self.accelerate(1000.0/120.0*(up+down), 1)
         self.direction += (right + left)
-        self.move(1000/120, 50)
+        self.move(1000.0/120.0, 50)
         self.send_message()
         self.draw_car()
 
