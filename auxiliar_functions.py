@@ -6,7 +6,7 @@ from random import randint
 
 white = (255, 255, 255)
 black = (0, 0, 0)
-initial_positions = [(430, 700, 0, 1), (760, 350, 90, 2), (350, 10, 180, 3), (10, 430, 270, 4)]
+initial_positions = [(415, 760, 0, 1), (760, 365, 90, 2), (365, 10, 180, 3), (10, 415, 270, 4)]
 
 
 def distance_to_center(**kwargs):
