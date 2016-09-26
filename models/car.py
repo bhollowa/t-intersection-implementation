@@ -22,7 +22,8 @@ class Car:
     length = 4  # meters
     message = None
 
-    def __init__(self, name, pos_x=0.0, pos_y=0.0, car_image=image.load(images_directory + "car.png"), absolute_speed=0.0, direction=0, lane=1):
+    def __init__(self, name, pos_x=0.0, pos_y=0.0, car_image=image.load(images_directory + "car.png"),
+                 absolute_speed=0.0, direction=0, lane=1):
         """
         Initializer of a car. It can be placed anywhere looking in any direction with any speed under the car maximum
         speed.
@@ -48,6 +49,9 @@ class Car:
         self.follow = False
 
     def __str__(self):
+        if self.get_message() is not None:
+            return "Auto " + self.name + " a " + str(
+                self.absolute_speed) + " velocidad siguiendo a " + self.get_message().car_name
         return "Auto " + self.name + " a " + str(self.absolute_speed) + " velocidad"
 
     def move(self, quantity, time_unit):
@@ -158,6 +162,9 @@ class Car:
 
     def start_following(self):
         self.follow = True
+
+    def get_name(self):
+        return self.name
 
     class ExceedCarMaximumSpeedError(Exception):
         pass
