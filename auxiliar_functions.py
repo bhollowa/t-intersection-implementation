@@ -40,8 +40,11 @@ def check_close_application(user_input):
     return True
 
 
-def random_car(name, max_speed):
-    pos_x, pos_y, direction, lane = initial_positions[randint(0, len(initial_positions) - 1)]
+def random_car(name, max_speed, **kwargs):
+    if "lane" in kwargs:
+        pos_x, pos_y, direction, lane = initial_positions[kwargs["lane"]-1]
+    else:
+        pos_x, pos_y, direction, lane = initial_positions[randint(0, len(initial_positions) - 1)]
     initial_speed = randint(0, max_speed)
     return Car(str(name), pos_x, pos_y, direction=direction, lane=lane, absolute_speed=initial_speed)
 
@@ -60,8 +63,12 @@ def display_info_on_car(car, display, letter, *args):
         display.blit(letter.render(car.name, True, black), (x, y))
     if "speed" in args:
         display.blit(letter.render(str(car.get_speed()), True, black), (x - 30, y))
-    if "followers" in args:
-        followers = car.get_followers()
-        for follower in followers:
-            x, y = follower.get_position()
-            display.blit(letter.render(car.name, True, black), (x + 30, y))
+    if "following" in args and car.get_message() is not None:
+        display.blit(letter.render(car.get_message().car_name, True, black), (x + 30, y))
+
+
+def random_cars(lanes, name, max_speed):
+    new_cars = []
+    for i in range(len(lanes)):
+        new_cars.append(random_car(name+i, max_speed, lane=lanes[i]))
+    return new_cars
