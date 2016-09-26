@@ -32,6 +32,7 @@ class Car:
         :param absolute_speed: absolute speed of the car.
         :param direction: direction at which the front of the car is looking.
         """
+        self.initial_speed = absolute_speed
         self.controller = None
         self.lane = lane
         self.name = name
@@ -165,6 +166,10 @@ class Car:
 
     def get_name(self):
         return self.name
+
+    def initial_conditions(self):
+        return "Car: " + self.name + " Following: " + self.get_message().car_name + " Lane: " + str(
+            self.lane) + " Speed: " + str(self.initial_speed)
 
     class ExceedCarMaximumSpeedError(Exception):
         pass
