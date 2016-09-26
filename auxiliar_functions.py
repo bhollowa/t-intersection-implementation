@@ -54,11 +54,14 @@ def colliding_cars(car_list):
     return None, False
 
 
-def display_info_on_car(rect, display, letter):
-    x, y = rect.get_position()
-    display.blit(letter.render(rect.name, True, black), (x, y))
-    display.blit(letter.render(str(rect.get_speed()), True, black), (x - 30, y))
-    followers = rect.get_followers()
-    for follower in followers:
-        x, y = follower.get_position()
-        display.blit(letter.render(rect.name, True, black), (x+30, y))
+def display_info_on_car(car, display, letter, *args):
+    x, y = car.get_position()
+    if "name" in args:
+        display.blit(letter.render(car.name, True, black), (x, y))
+    if "speed" in args:
+        display.blit(letter.render(str(car.get_speed()), True, black), (x - 30, y))
+    if "followers" in args:
+        followers = car.get_followers()
+        for follower in followers:
+            x, y = follower.get_position()
+            display.blit(letter.render(car.name, True, black), (x + 30, y))
