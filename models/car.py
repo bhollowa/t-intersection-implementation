@@ -36,6 +36,7 @@ class Car:
         """
         self.initial_speed = absolute_speed  # initial speed of the car when it appeared in the simulation.
         self.creation_time = time()
+        self.left_intersection_time = None
         self.controller = controller
         self.lane = lane
         self.name = name
@@ -61,9 +62,12 @@ class Car:
         :return: String representation of the car.
         """
         if self.get_message() is not None:
-            return "Car: " + str(self.name) + " Speed: " + str(
-                self.absolute_speed) + " Following: " + str(self.get_message().car_name)
-        return "Car: " + self.name + " Speed: " + str(self.absolute_speed)
+            return '{"car_name":' + str(self.name) + ',"following":' + str(self.get_message().car_name) + ',"lane":' + \
+                   str(self.lane) + ',"speed":' + str(self.initial_speed) + ',"creation_time":' + \
+                   str(self.creation_time) + ',"left_intersection_time":' + str(self.left_intersection_time) + '}'
+        return '{"car_name":' + str(self.name) + ',"lane":' + str(self.lane) + ',"speed":' + str(self.initial_speed) + \
+               ',"creation_time":' + str(self.creation_time) + ',"left_intersection_time":' + \
+               str(self.left_intersection_time) + '}'
 
     def move(self, quantity, time_unit):
         """
