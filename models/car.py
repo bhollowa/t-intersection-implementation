@@ -3,6 +3,7 @@ from pygame import image, transform
 from models.message import Message
 import os
 from car_controllers.deafult_controller import default_controller
+from time import time
 
 images_directory = os.getcwd() + "/images/"
 
@@ -34,6 +35,7 @@ class Car:
         :param controller: object which controls the speed of the car.
         """
         self.initial_speed = absolute_speed  # initial speed of the car when it appeared in the simulation.
+        self.creation_time = time()
         self.controller = controller
         self.lane = lane
         self.name = name
@@ -158,7 +160,6 @@ class Car:
         with the keyboards arrows.
         :param speed_change: amount to change the speed og the car
         :param direction_change: amount to change the direction
-        :return:
         """
         self.accelerate(1000.0/120.0*speed_change, 1)
         self.direction += direction_change
@@ -261,10 +262,25 @@ class Car:
         :return: String with initial conditions and more information of the car.
         """
         if self.get_message() is not None:
-            return "Car: " + str(self.name) + " Following: " + str(self.get_message().car_name) + " Lane: " + str(
-                self.lane) + " Speed: " + str(self.initial_speed)
-        return "Car: " + str(self.name) + " Lane: " + str(
-            self.lane) + " Speed: " + str(self.initial_speed)
+            return '{"car_name":' + str(self.name) + ',"following":' + str(self.get_message().car_name) + ',"lane":' + \
+                   str(self.lane) + ',"speed":' + str(self.initial_speed) + ',"creation_time":' + str(self.creation_time)\
+                   + '}'
+        return '{"car_name":' + str(self.name) + ',"lane":' + str(self.lane) + ',"speed":' + str(self.initial_speed) + \
+               ',"creation_time":' + str(self.creation_time) + '}'
+
+    def to_json(self):
+        """
+        Returns a string representing a car in json format, for log use.
+        :return: sting of json representation of a car.
+        """
+        return_string = '{'
+        return_string += '"name":' + str(self.get_name()) + ','
+        return_string += '"following":' + str(self.get_message().car_name) + ','
+        return_string += '"lane":' + str(self.lane) + ','
+        return_string += '"speed":' + str(self.get_speed()) + ','
+        return_string += '"creation_time":' + str(self.creation_time)
+        return_string += '}'
+        return return_string
 
     class ExceedCarMaximumSpeedError(Exception):
         pass
