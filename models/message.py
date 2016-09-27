@@ -17,7 +17,8 @@ class Message:
             self.direction = car.get_direction()
             self.speed = car.get_speed()
             self.car_name = car.get_name()
-        self.car_name = -1
+        else:
+            self.car_name = -1
 
     def distance_to_center(self):
         """
