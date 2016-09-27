@@ -1,3 +1,4 @@
 #PyCharm files
 .idea/
-/log.*
+/log*.*
+/logs/
