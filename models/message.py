@@ -19,6 +19,10 @@ class Message:
             self.car_name = car.get_name()
         else:
             self.car_name = -1
+            self.pos_x = 384
+            self.pos_y = 384
+            self.direction = 0
+            self.speed = 10
 
     def distance_to_center(self):
         """
