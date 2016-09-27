@@ -59,8 +59,8 @@ class Car:
         :return: String representation of the car.
         """
         if self.get_message() is not None:
-            return "Car: " + self.name + " Speed: " + str(
-                self.absolute_speed) + " Following: " + self.get_message().car_name
+            return "Car: " + str(self.name) + " Speed: " + str(
+                self.absolute_speed) + " Following: " + str(self.get_message().car_name)
         return "Car: " + self.name + " Speed: " + str(self.absolute_speed)
 
     def move(self, quantity, time_unit):
@@ -152,18 +152,16 @@ class Car:
         self.screen_car = self.rotated_image.get_rect()
         self.screen_car.center = self.get_position()
 
-    def update(self, right, left, up, down):
+    def update(self, speed_change, direction_change):
         """
         Updates the speed, position and images of the car. Receives inputs as if a user were playing with the car
         with the keyboards arrows.
-        :param right: amount to rotate the car to the right.
-        :param left: amount to rotate the car to the left.
-        :param up: amount to augment the speed of the car.
-        :param down: amount to diminish the speed of the car.
+        :param speed_change: amount to change the speed og the car
+        :param direction_change: amount to change the direction
         :return:
         """
-        self.accelerate(1000.0/120.0*(up+down), 1)
-        self.direction += (right + left)
+        self.accelerate(1000.0/120.0*speed_change, 1)
+        self.direction += direction_change
         self.move(1000.0/120.0, 50)
         self.send_message()
         self.draw_car()
@@ -263,9 +261,9 @@ class Car:
         :return: String with initial conditions and more information of the car.
         """
         if self.get_message() is not None:
-            return "Car: " + self.name + " Following: " + self.get_message().car_name + " Lane: " + str(
+            return "Car: " + str(self.name) + " Following: " + str(self.get_message().car_name) + " Lane: " + str(
                 self.lane) + " Speed: " + str(self.initial_speed)
-        return "Car: " + self.name + " Lane: " + str(
+        return "Car: " + str(self.name) + " Lane: " + str(
             self.lane) + " Speed: " + str(self.initial_speed)
 
     class ExceedCarMaximumSpeedError(Exception):
