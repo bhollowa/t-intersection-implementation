@@ -2,11 +2,13 @@ from math import pi, cos, sin, sqrt, pow
 
 
 class Message:
-    def __init__(self, car):
-        self.pos_x, self.pos_y = car.get_position()
-        self.direction = car.get_direction()
-        self.speed = car.get_speed()
-        self.car_name = car.get_name()
+    def __init__(self, car=None):
+        if car is not None:
+            self.pos_x, self.pos_y = car.get_position()
+            self.direction = car.get_direction()
+            self.speed = car.get_speed()
+            self.car_name = car.get_name()
+        self.car_name = -1
 
     def distance_to_center(self):
         x = 1 if self.pos_x % 384 == 0 else 0
