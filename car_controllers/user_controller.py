@@ -4,9 +4,9 @@ from pygame.locals import KEYDOWN, K_RIGHT, K_LEFT, K_UP, K_DOWN
 def car_user_input(user_inputs, actual_values):
     """
     Function so a user can move a car with the keyboard.
-    :param user_inputs:
-    :param actual_values:
-    :return:
+    :param user_inputs: pygame inputs.
+    :param actual_values: actual values of the right, left, up and down variables,
+    :return: updated values.
     """
     k_right, k_left, k_up, k_down = actual_values
     for event in user_inputs:
