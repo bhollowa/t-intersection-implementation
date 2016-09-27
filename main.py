@@ -5,7 +5,9 @@ from car_controllers.supervisor_level import supervisor_level
 import sys
 
 graphic_environment = "graphic" in sys.argv
+wait = "wait" in sys.argv
 images_directory = os.getcwd() + "/images/"
+
 if graphic_environment:
     screen = pygame.display.set_mode((768, 768))
     screen_rect = screen.get_rect()
@@ -25,13 +27,15 @@ FPS = 60
 counter = 0
 screen_cars = []
 car_name_counter = 0
+collisions = 0
+collision_list = []
 
 
 if __name__ == "__main__":
     cars_per_second = 2
     while iteration and car_name_counter < 10000:
         counter += 1
-        if car_name_counter % 250 == 0:
+        if car_name_counter % 100 == 0 and counter % (60/cars_per_second) == 0:
             print "Number of cars simulated: " + str(car_name_counter)
         if counter % (60/cars_per_second) == 0:
             new_cars.append(random_car(car_name_counter, 20))
@@ -59,13 +63,19 @@ if __name__ == "__main__":
         screen_cars = []
         collided_cars, collide = colliding_cars(cars)
         if collide and collided_cars[0].screen_car.colliderect(intersection):
-            print "Collision. Start recording. Code: " + str(collided_cars[0].get_name()) + "to" + str(
+            code = str(collided_cars[0].get_name()) + "to" + str(
                 collided_cars[1].get_name())
-            for car in cars:
-                print car.initial_conditions()
-            for car in collided_cars:
-                print car
-                pygame.time.wait(10000)
-            print "End collision. Finish records"
+            if code not in collision_list:
+                collision_list.append(code)
+                collisions += 1
+                print "Collision. Start recording. Code: " + code
+                for car in cars:
+                    print car.initial_conditions()
+                for car in collided_cars:
+                    print car
+                    if graphic_environment and wait:
+                        pygame.time.wait(10000)
+                print "End Collision. Finish recording. Code: " + code
         if graphic_environment:
             clock.tick(FPS)
+    print "Last records. Total collisions: " + str(collisions)
