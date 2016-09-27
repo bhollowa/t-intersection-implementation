@@ -2,11 +2,15 @@ import os
 import pygame
 from auxiliar_functions import check_close_application, random_car, random_cars, colliding_cars, display_info_on_car
 from car_controllers.supervisor_level import supervisor_level
-import sys
+from sys import argv
+from datetime import datetime
+import logging
 
-graphic_environment = "graphic" in sys.argv
-wait = "wait" in sys.argv
+graphic_environment = "graphic" in argv
+wait = "wait" in argv
 images_directory = os.getcwd() + "/images/"
+logger_name = os.getcwd() + "/logs/log_" + str(datetime.now()).split(" ")[0].replace("-", "_") + ".txt"
+logging.basicConfig(filename=logger_name, level=logging.DEBUG, format='{"time":"%(asctime)s", "message":%(message)s},')
 
 if graphic_environment:
     screen = pygame.display.set_mode((768, 768))
@@ -35,8 +39,10 @@ if __name__ == "__main__":
     cars_per_second = 2
     while iteration and car_name_counter < 10000:
         counter += 1
-        if car_name_counter % 100 == 0 and counter % (60/cars_per_second) == 0:
-            print "Number of cars simulated: " + str(car_name_counter)
+        if car_name_counter % 250 == 0 and counter % (60/cars_per_second) == 0:
+            message = '{"cars_simulated":' + str(car_name_counter) + '}'
+            logging.info(message)
+            print message
         if counter % (60/cars_per_second) == 0:
             new_cars.append(random_car(car_name_counter, 20))
             car_name_counter += 1
@@ -68,14 +74,19 @@ if __name__ == "__main__":
             if code not in collision_list:
                 collision_list.append(code)
                 collisions += 1
-                print "Collision. Start recording. Code: " + code
+                message = '{"collision_code":"' + code + '",'
+                message += ' "collision_initial_conditions":['
                 for car in cars:
-                    print car.initial_conditions()
+                    message += car.initial_conditions() + ','
+                message = message[:len(message)-1] + '],'
+                message += '"collided_cars":['
                 for car in collided_cars:
-                    print car
+                    message += car.to_json() + ','
                     if graphic_environment and wait:
                         pygame.time.wait(10000)
-                print "End Collision. Finish recording. Code: " + code
+                message = message[:len(message) - 1] + ']}'
+                logging.info(message)
+                print message
         if graphic_environment:
             clock.tick(FPS)
     print "Last records. Total collisions: " + str(collisions)
