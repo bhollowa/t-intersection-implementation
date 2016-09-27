@@ -17,10 +17,8 @@ class Car:
     max_backward_speed = -20.0  # meters/10*seconds.
     acceleration_rate = 3.0  # meters/seconds*seconds.
     brake_deceleration_rate = 4  # meters/seconds*seconds.
-    max_turning_speed = 14.0  # meters/seconds.
     maximum_turning_degrees = 45  # degrees.
-    length = 4  # meters
-    message = None
+    message = Message()
 
     def __init__(self, name, pos_x=0.0, pos_y=0.0, car_image=image.load(images_directory + "car.png"),
                  absolute_speed=0.0, direction=0, lane=1):
@@ -168,7 +166,10 @@ class Car:
         return self.name
 
     def initial_conditions(self):
-        return "Car: " + self.name + " Following: " + self.get_message().car_name + " Lane: " + str(
+        if self.get_message() is not None:
+            return "Car: " + self.name + " Following: " + self.get_message().car_name + " Lane: " + str(
+                self.lane) + " Speed: " + str(self.initial_speed)
+        return "Car: " + self.name + " Lane: " + str(
             self.lane) + " Speed: " + str(self.initial_speed)
 
     class ExceedCarMaximumSpeedError(Exception):
