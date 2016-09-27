@@ -8,7 +8,7 @@ graphic_environment = "graphic" in sys.argv
 images_directory = os.getcwd() + "/images/"
 if graphic_environment:
     screen = pygame.display.set_mode((768, 768))
-    scree_rect = screen.get_rect()
+    screen_rect = screen.get_rect()
     bg = pygame.image.load(images_directory + "background.jpg")
     clock = pygame.time.Clock()
     pygame.init()
