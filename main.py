@@ -3,7 +3,6 @@ import pygame
 from auxiliar_functions import check_close_application, random_car, colliding_cars, display_info_on_car, setup_logger
 from car_controllers.supervisor_level import supervisor_level
 from sys import argv
-from datetime import datetime
 import logging
 
 graphic_environment = "graphic" in argv
@@ -11,10 +10,11 @@ wait = "wait" in argv
 images_directory = os.getcwd() + "/images/"
 logger_directory = os.path.dirname(os.path.abspath(__file__)) + "/logs/"
 setup_logger("collision", logger_directory + "collisions.log")
-setup_logger("creation", logger_directory + "creation.log")
 setup_logger("numbers_of_cars", logger_directory + "total_cars.log")
+setup_logger("left_intersection", logger_directory + "left_intersection.log")
 collision_log = logging.getLogger('collision')
 total_cars_log = logging.getLogger('numbers_of_cars')
+left_intersection_log = logging.getLogger('left_intersection')
 if graphic_environment:
     screen = pygame.display.set_mode((768, 768))
     screen_rect = screen.get_rect()
@@ -45,7 +45,6 @@ if __name__ == "__main__":
         if car_name_counter % 250 == 0 and counter % (60/cars_per_second) == 0:
             message = '{"cars_simulated":' + str(car_name_counter) + '}'
             total_cars_log.info(message)
-            print message
         if counter % (60/cars_per_second) == 0:
             new_cars.append(random_car(car_name_counter, 20))
             car_name_counter += 1
@@ -60,6 +59,8 @@ if __name__ == "__main__":
         for car in cars:
             if not car.screen_car.colliderect(screen_rect):
                 cars.remove(car)
+                car.set_left_intersection_time()
+                left_intersection_log.info(str(car))
                 for follower in car.get_followers():
                     follower.stop_following()
                 continue
@@ -89,7 +90,6 @@ if __name__ == "__main__":
                         pygame.time.wait(10000)
                 message = message[:len(message) - 1] + ']}'
                 collision_log.info(message)
-                print message
         if graphic_environment:
             clock.tick(FPS)
     print "Last records. Total collisions: " + str(collisions)
