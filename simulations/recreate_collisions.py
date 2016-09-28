@@ -14,8 +14,7 @@ def create_cars_from_collision_json(collision_json):
     :param collision_json: json with a collision report.
     :return: dictionary with the cars. The key value is the name of the car.
     """
-    collision_information = JSONDecoder().decode(collision_json)
-    json_cars = collision_information["message"]["collision_initial_conditions"]
+    json_cars = collision_json["message"]["collision_initial_conditions"]
     cars_dict = {}
     for json_car in json_cars:
         cars_dict[json_car["car_name"]] = create_car_from_json(json_car)

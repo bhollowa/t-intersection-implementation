@@ -46,7 +46,10 @@ if __name__ == "__main__":
             message = '{"cars_simulated":' + str(car_name_counter) + '}'
             total_cars_log.info(message)
         if counter % (60/cars_per_second) == 0:
-            new_cars.append(random_car(car_name_counter, 20))
+            if len(cars) > 0:
+                new_cars.append(random_car(car_name_counter, 20, last_lane=cars[len(cars)-1].get_lane()))
+            else:
+                new_cars.append(random_car(car_name_counter, 20))
             car_name_counter += 1
             new_car = True
         if new_car:
