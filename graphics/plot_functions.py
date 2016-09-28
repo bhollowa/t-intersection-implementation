@@ -16,7 +16,6 @@ def collisions_per_number_of_cars(file_location):
     reading_file.close()
     file_string = file_string[:len(file_string)-2] + ']'
     json_data = json.JSONDecoder().decode(file_string)
-    # initial_time = datetime.datetime.strptime(json_data[0]['time'], '%Y-%m-%d %H:%M:%S,%f')
     x = []
     y = []
     collision_dict = {}
