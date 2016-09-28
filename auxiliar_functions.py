@@ -2,6 +2,7 @@ from pygame.locals import *
 import pygame
 from models.car import Car
 from random import randint
+import logging
 
 
 white = (255, 255, 255)  # RGB white color representation
@@ -138,3 +139,16 @@ def create_car_from_json(json_car):
     pos_x, pos_y, direction, lane = initial_positions[json_car["lane"]-1]
     car = Car(json_car["car_name"], pos_x, pos_y, direction=direction, absolute_speed=json_car["speed"], lane=lane)
     return car
+
+
+def setup_logger(logger_name, log_file, level=logging.DEBUG):
+    l = logging.getLogger(logger_name)
+    formatter = logging.Formatter('{"time":"%(asctime)s", "message":%(message)s},')
+    file_handler = logging.FileHandler(log_file, mode='w')
+    file_handler.setFormatter(formatter)
+    stream_handler = logging.StreamHandler()
+    stream_handler.setFormatter(formatter)
+
+    l.setLevel(level)
+    l.addHandler(file_handler)
+    l.addHandler(stream_handler)
