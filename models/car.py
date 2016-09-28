@@ -293,7 +293,7 @@ class Car:
         return_string += '"following":' + str(self.get_message().car_name) + ','
         return_string += '"lane":' + str(self.lane) + ','
         return_string += '"speed":' + str(self.get_speed()) + ','
-        return_string += '"creation_time":' + str(self.creation_time)
+        return_string += '"creation_time":' + str(self.creation_time) + ','
         return_string += '"left_intersection_time":' + str(self.left_intersection_time)
         return_string += '}'
         return return_string
