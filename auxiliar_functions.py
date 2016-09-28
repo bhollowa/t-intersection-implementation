@@ -77,7 +77,11 @@ def random_car(name, max_speed, **kwargs):
     if "lane" in kwargs:
         pos_x, pos_y, direction, lane = initial_positions[kwargs["lane"]-1]
     else:
-        pos_x, pos_y, direction, lane = initial_positions[randint(0, len(initial_positions) - 1)]
+        new_lane = randint(0, len(initial_positions) - 1)
+        if "last_lane" in kwargs:
+            if new_lane == kwargs["last_lane"] -1:
+                new_lane = (new_lane+1) % 4
+        pos_x, pos_y, direction, lane = initial_positions[new_lane]
     initial_speed = randint(0, max_speed)
     return Car(str(name), pos_x, pos_y, direction=direction, lane=lane, absolute_speed=initial_speed)
 
@@ -138,7 +142,7 @@ def create_car_from_json(json_car):
     """
     pos_x, pos_y, direction, lane = initial_positions[json_car["lane"]-1]
     car = Car(json_car["car_name"], pos_x, pos_y, direction=direction, absolute_speed=json_car["speed"], lane=lane,
-              creation_time=json_car["creation_time"], left_intersection_time=json_car["left_intersection_time"])
+              creation_time=json_car["creation_time"], left_intersection_time=None)#json_car["left_intersection_time"])
     return car
 
 
