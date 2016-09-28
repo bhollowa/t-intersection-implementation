@@ -263,6 +263,13 @@ class Car:
         """
         return self.name
 
+    def get_lane(self):
+        """
+        Return the lane in which the cart started
+        :return: int of lane
+        """
+        return self.lane
+
     def initial_conditions(self):
         """
         Returns a String with the initial speed and lane of the car, his name and the car it is following, if it is
@@ -287,6 +294,7 @@ class Car:
         return_string += '"lane":' + str(self.lane) + ','
         return_string += '"speed":' + str(self.get_speed()) + ','
         return_string += '"creation_time":' + str(self.creation_time)
+        return_string += '"left_intersection_time":' + str(self.left_intersection_time)
         return_string += '}'
         return return_string
 
