@@ -7,6 +7,7 @@ def collisions_per_number_of_cars(file_location):
     """
     Plot the number of collisions per car present in the intersection at the collision moment.
     :param file_location: absolute path to the file to read. The file must be in json format.
+    :return: url to plot.ly with the interactive graph
     """
     reading_file = open(file_location)
     file_string = '['
@@ -32,4 +33,4 @@ def collisions_per_number_of_cars(file_location):
         y.append(collision_dict[key])
     trace0 = go.Scatter(x=x, y=y, mode='markers', name='cars in collition')
     data = [trace0]
-    py.plot(data, filename='prueba')
+    return py.plot(data, filename='prueba')
