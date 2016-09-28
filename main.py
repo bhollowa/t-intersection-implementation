@@ -1,6 +1,6 @@
 import os
 import pygame
-from auxiliar_functions import check_close_application, random_car, random_cars, colliding_cars, display_info_on_car
+from auxiliar_functions import check_close_application, random_car, colliding_cars, display_info_on_car, setup_logger
 from car_controllers.supervisor_level import supervisor_level
 from sys import argv
 from datetime import datetime
@@ -9,9 +9,12 @@ import logging
 graphic_environment = "graphic" in argv
 wait = "wait" in argv
 images_directory = os.getcwd() + "/images/"
-logger_name = os.getcwd() + "/logs/log_" + str(datetime.now()).split(" ")[0].replace("-", "_") + ".txt"
-logging.basicConfig(filename=logger_name, level=logging.DEBUG, format='{"time":"%(asctime)s", "message":%(message)s},')
-
+logger_directory = os.path.dirname(os.path.abspath(__file__)) + "/logs/"
+setup_logger("collision", logger_directory + "collisions.log")
+setup_logger("creation", logger_directory + "creation.log")
+setup_logger("numbers_of_cars", logger_directory + "total_cars.log")
+collision_log = logging.getLogger('collision')
+total_cars_log = logging.getLogger('numbers_of_cars')
 if graphic_environment:
     screen = pygame.display.set_mode((768, 768))
     screen_rect = screen.get_rect()
@@ -41,7 +44,7 @@ if __name__ == "__main__":
         counter += 1
         if car_name_counter % 250 == 0 and counter % (60/cars_per_second) == 0:
             message = '{"cars_simulated":' + str(car_name_counter) + '}'
-            logging.info(message)
+            total_cars_log.info(message)
             print message
         if counter % (60/cars_per_second) == 0:
             new_cars.append(random_car(car_name_counter, 20))
@@ -85,7 +88,7 @@ if __name__ == "__main__":
                     if graphic_environment and wait:
                         pygame.time.wait(10000)
                 message = message[:len(message) - 1] + ']}'
-                logging.info(message)
+                collision_log.info(message)
                 print message
         if graphic_environment:
             clock.tick(FPS)
