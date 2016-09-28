@@ -4,10 +4,9 @@ from models.message import Message
 import os
 from car_controllers.deafult_controller import default_controller
 from time import time
-import logging
 
 images_directory = os.path.dirname(os.path.abspath(__file__)) + "/../images/"
-creation_logger = logging.getLogger('creation')
+
 
 class Car:
     """
@@ -54,7 +53,6 @@ class Car:
         self.follower_cars = []  # all the followers of the car will be here, so this car can send it information
         # to the others
         self.follow = False  # True if the car is following some other car
-        creation_logger.info(str(self))
 
     def __str__(self):
         """
@@ -287,6 +285,12 @@ class Car:
         return_string += '"creation_time":' + str(self.creation_time)
         return_string += '}'
         return return_string
+
+    def set_left_intersection_time(self):
+        """
+        Set the left_intersection_time to this time. Time stored in seconds.
+        """
+        self.left_intersection_time = time()
 
     class ExceedCarMaximumSpeedError(Exception):
         pass
