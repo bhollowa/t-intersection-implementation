@@ -20,7 +20,8 @@ class Car:
     message = Message()
 
     def __init__(self, name, pos_x=0.0, pos_y=0.0, car_image=image.load(images_directory + "car.png"),
-                 absolute_speed=0.0, direction=0, lane=1, controller=default_controller):
+                 absolute_speed=0.0, direction=0, lane=1, controller=default_controller, creation_time=None,
+                 left_intersection_time=None):
         """
 
         :param name: id to identify the car. Integer
@@ -35,8 +36,11 @@ class Car:
         :param controller: object which controls the speed of the car.
         """
         self.initial_speed = absolute_speed  # initial speed of the car when it appeared in the simulation.
-        self.creation_time = time()
-        self.left_intersection_time = None
+        if creation_time is None:
+            self.creation_time = time()
+        else:
+            self.creation_time = creation_time
+        self.left_intersection_time = left_intersection_time
         self.controller = controller
         self.lane = lane
         self.name = name
