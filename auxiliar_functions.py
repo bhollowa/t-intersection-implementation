@@ -126,3 +126,15 @@ def random_cars(lanes, name, max_speed):
     for i in range(len(lanes)):
         new_cars.append(random_car(name+i, max_speed, lane=lanes[i]))
     return new_cars
+
+
+def create_car_from_json(json_car):
+    """
+    Function that creates a car from a json representation of a car.
+    The json must have the form "{'car_name': <int>, 'following': <int>, 'lane': <int>, 'speed': <float>, 'creation_time': <float>}
+    :param json_car: json representation of a car
+    :return: a new car with the json_car information
+    """
+    pos_x, pos_y, direction, lane = initial_positions[json_car["lane"]-1]
+    car = Car(json_car["car_name"], pos_x, pos_y, direction=direction, absolute_speed=json_car["speed"], lane=lane)
+    return car
