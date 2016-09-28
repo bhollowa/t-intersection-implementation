@@ -5,7 +5,7 @@ import os
 from car_controllers.deafult_controller import default_controller
 from time import time
 
-images_directory = os.getcwd() + "/images/"
+images_directory = os.path.dirname(os.path.abspath(__file__)) + "/../images/"
 
 
 class Car:
