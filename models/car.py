@@ -270,19 +270,6 @@ class Car:
         """
         return self.lane
 
-    def initial_conditions(self):
-        """
-        Returns a String with the initial speed and lane of the car, his name and the car it is following, if it is
-        following a car.
-        :return: String with initial conditions and more information of the car.
-        """
-        if self.get_message() is not None:
-            return '{"car_name":' + str(self.name) + ',"following":' + str(self.get_message().car_name) + ',"lane":' + \
-                   str(self.lane) + ',"speed":' + str(self.initial_speed) + ',"creation_time":' + str(self.creation_time)\
-                   + '}'
-        return '{"car_name":' + str(self.name) + ',"lane":' + str(self.lane) + ',"speed":' + str(self.initial_speed) + \
-               ',"creation_time":' + str(self.creation_time) + '}'
-
     def to_json(self):
         """
         Returns a string representing a car in json format, for log use.
