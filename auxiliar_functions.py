@@ -111,7 +111,7 @@ def display_info_on_car(car, display, letter, *args):
     """
     x, y = car.get_position()
     if "name" in args:
-        display.blit(letter.render(car.name, True, black), (x, y))
+        display.blit(letter.render(str(car.name), True, black), (x, y))
     if "speed" in args:
         display.blit(letter.render(str(car.get_speed()), True, black), (x - 30, y))
     if "following" in args and car.get_message() is not None:
