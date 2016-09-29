@@ -53,7 +53,7 @@ def check_close_application(user_input):
     Check if the application must be close depending on the user input (for the graphical environment).
     Pressing the x of a pygame window or the escape key will close the window and end the simulation.
     :param user_input: pygame input of the user.
-    :return: Flase if the simulation must end. True if it must continue.
+    :return: False if the simulation must end. True if it must continue.
     """
     for event in user_input:
         if event.type == pygame.QUIT:
