@@ -8,7 +8,7 @@ import logging
 white = (255, 255, 255)  # RGB white color representation
 black = (0, 0, 0)  # RGB black color representation
 initial_positions = [(415, 760, 0, 1), (760, 365, 90, 2), (365, 10, 180, 3), (10, 415, 270, 4)]  # initial positions
-# of the cars per lane with the direction they should face..
+# of the cars per lane with the direction they should face.
 
 
 def distance_to_center(**kwargs):
@@ -79,7 +79,7 @@ def random_car(name, max_speed, **kwargs):
     else:
         new_lane = randint(0, len(initial_positions) - 1)
         if "last_lane" in kwargs:
-            if new_lane == kwargs["last_lane"] -1:
+            if new_lane == kwargs["last_lane"] - 1:
                 new_lane = (new_lane+1) % 4
         pos_x, pos_y, direction, lane = initial_positions[new_lane]
     initial_speed = randint(0, max_speed)
@@ -93,7 +93,7 @@ def colliding_cars(car_list):
     :return: tuple with the colliding cars and True, if the cars collided. None and false otherwise.
     """
     for i in range(len(car_list)):
-        for j in range(i+1,len(car_list)):
+        for j in range(i+1, len(car_list)):
             if car_list[i].screen_car.colliderect(car_list[j].screen_car):
                 return (car_list[i], car_list[j]), True
     return None, False
@@ -136,7 +136,8 @@ def random_cars(lanes, name, max_speed):
 def create_car_from_json(json_car):
     """
     Function that creates a car from a json representation of a car.
-    The json must have the form "{'car_name': <int>, 'following': <int>, 'lane': <int>, 'speed': <float>, 'creation_time': <float>}
+    The json must have the form "{'car_name': <int>, 'following': <int>, 'lane': <int>, 'speed': <float>,
+    'creation_time': <float>}
     :param json_car: json representation of a car
     :return: a new car with the json_car information
     """
