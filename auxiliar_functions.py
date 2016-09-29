@@ -141,8 +141,9 @@ def create_car_from_json(json_car):
     :return: a new car with the json_car information
     """
     pos_x, pos_y, direction, lane = initial_positions[json_car["lane"]-1]
+    left_time = json_car["left_intersection_time"] if "left_intersection_time" in json_car else None
     car = Car(json_car["car_name"], pos_x, pos_y, direction=direction, absolute_speed=json_car["speed"], lane=lane,
-              creation_time=json_car["creation_time"], left_intersection_time=None)#json_car["left_intersection_time"])
+              creation_time=json_car["creation_time"], left_intersection_time=left_time)
     return car
 
 
