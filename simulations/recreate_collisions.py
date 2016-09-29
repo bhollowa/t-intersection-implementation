@@ -69,7 +69,6 @@ def recreate_collision(collision_json, graphic):
     collision_list = []
     cars = []
     intersection = pygame.Rect(280, 280, 210, 210)
-    screen_cars = []
     if graphic:
         screen = pygame.display.set_mode((768, 768))
         screen_rect = screen.get_rect()
@@ -79,15 +78,18 @@ def recreate_collision(collision_json, graphic):
         font = pygame.font.SysFont('Arial', 20)
         pygame.display.set_caption('Car simulation')
         fps = 120
-        screen_cars.append(screen_rect)
     else:
         screen_rect = pygame.Rect(0, 0, 768, 768)
 
     recreation_start_time = datetime.now()
     while True:
-        if car_creation_times[car_creation_counter][0] - start_simulation_time < datetime.now() - recreation_start_time and car_creation_counter < len(car_creation_times) -1:
-            cars.append(cars_dict[car_creation_times[car_creation_counter][1]])
-            car_creation_counter += 1
+        enough_cars = car_creation_counter < len(car_creation_times)
+        if enough_cars:
+            time_in = car_creation_times[car_creation_counter][
+                          0] - start_simulation_time < datetime.now() - recreation_start_time
+            if time_in:
+                cars.append(cars_dict[car_creation_times[car_creation_counter][1]])
+                car_creation_counter += 1
         if graphic:
             events = pygame.event.get()
             if not check_close_application(events):
@@ -100,11 +102,9 @@ def recreate_collision(collision_json, graphic):
                     follower.stop_following()
                 continue
             car.update(*car.controller(car))
-            if not car.screen_car in screen_cars:
-                screen_cars.append(car.screen_car)
             if graphic:
                 screen.blit(car.rotated_image, car.screen_car)
-                display_info_on_car(car, screen, font, "name")
+                display_info_on_car(car, screen, font, "name", "following")
         collided_cars, collide = colliding_cars(cars)
         if collide and collided_cars[0].screen_car.colliderect(intersection):
             print "collision"
@@ -114,7 +114,7 @@ def recreate_collision(collision_json, graphic):
                 collision_list.append(code)
                 collisions += 1
         if graphic:
-            pygame.display.update(screen_cars)
+            pygame.display.update(screen_rect)
             clock.tick(fps)
         elif len(cars) <= 0:
             break
