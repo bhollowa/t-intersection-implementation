@@ -78,7 +78,7 @@ def recreate_collision(collision_json, graphic):
         pygame.init()
         font = pygame.font.SysFont('Arial', 20)
         pygame.display.set_caption('Car simulation')
-        FPS = 120
+        fps = 120
         screen_cars.append(screen_rect)
     else:
         screen_rect = pygame.Rect(0, 0, 768, 768)
@@ -115,6 +115,6 @@ def recreate_collision(collision_json, graphic):
                 collisions += 1
         if graphic:
             pygame.display.update(screen_cars)
-            clock.tick(FPS)
+            clock.tick(fps)
         elif len(cars) <= 0:
             break
