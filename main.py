@@ -16,6 +16,18 @@ setup_logger("left_intersection", logger_directory + "left_intersection" + log_n
 collision_log = logging.getLogger('collision')
 total_cars_log = logging.getLogger('numbers_of_cars')
 left_intersection_log = logging.getLogger('left_intersection')
+
+new_cars = []
+cars = []
+iteration = True
+new_car = False
+intersection = pygame.Rect(280, 280, 210, 210)
+FPS = 60
+counter = 0
+car_name_counter = 0
+collisions = 0
+collision_list = []
+
 if graphic_environment:
     screen = pygame.display.set_mode((768, 768))
     screen_rect = screen.get_rect()
@@ -26,18 +38,6 @@ if graphic_environment:
     pygame.display.set_caption('Car simulation')
 else:
     screen_rect = pygame.Rect(0, 0, 768, 768)
-new_cars = []
-cars = []
-iteration = True
-new_car = False
-intersection = pygame.Rect(280, 280, 210, 210)
-FPS = 60
-counter = 0
-screen_cars = []
-car_name_counter = 0
-collisions = 0
-collision_list = []
-
 
 if __name__ == "__main__":
     cars_per_second = 2
@@ -69,12 +69,10 @@ if __name__ == "__main__":
                     follower.stop_following()
                 continue
             car.update(*car.controller(car))
-            screen_cars.append(car.screen_car)
             if graphic_environment:
                 screen.blit(car.rotated_image, car.screen_car)
                 display_info_on_car(car, screen, font, "name", "following")
                 pygame.display.update()
-        screen_cars = []
         collided_cars, collide = colliding_cars(cars)
         if collide and collided_cars[0].screen_car.colliderect(intersection):
             code = str(collided_cars[0].get_name()) + "to" + str(
@@ -85,7 +83,7 @@ if __name__ == "__main__":
                 message = '{"collision_code":"' + code + '",'
                 message += ' "collision_initial_conditions":['
                 for car in cars:
-                    message += car.initial_conditions() + ','
+                    message += car.to_json() + ','
                 message = message[:len(message)-1] + '],'
                 message += '"collided_cars":['
                 for car in collided_cars:
@@ -95,5 +93,6 @@ if __name__ == "__main__":
                 message = message[:len(message) - 1] + ']}'
                 collision_log.info(message)
         if graphic_environment:
+            pygame.display.update(screen_rect)
             clock.tick(FPS)
     print "Last records. Total collisions: " + str(collisions)
