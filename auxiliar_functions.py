@@ -151,9 +151,6 @@ def setup_logger(logger_name, log_file, level=logging.DEBUG):
     formatter = logging.Formatter('{"time":"%(asctime)s", "message":%(message)s},')
     file_handler = logging.FileHandler(log_file, mode='w')
     file_handler.setFormatter(formatter)
-    stream_handler = logging.StreamHandler()
-    stream_handler.setFormatter(formatter)
 
     l.setLevel(level)
     l.addHandler(file_handler)
-    l.addHandler(stream_handler)
