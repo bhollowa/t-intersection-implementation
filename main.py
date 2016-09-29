@@ -7,11 +7,12 @@ import logging
 
 graphic_environment = "graphic" in argv
 wait = "wait" in argv
-images_directory = os.getcwd() + "/images/"
+images_directory = os.path.dirname(os.path.abspath(__file__)) + "/images/"
 logger_directory = os.path.dirname(os.path.abspath(__file__)) + "/logs/"
-setup_logger("collision", logger_directory + "collisions.log")
-setup_logger("numbers_of_cars", logger_directory + "total_cars.log")
-setup_logger("left_intersection", logger_directory + "left_intersection.log")
+log_name = "29-9"
+setup_logger("collision", logger_directory + "collisions" + log_name + ".log")
+setup_logger("numbers_of_cars", logger_directory + "total_cars" + log_name + ".log")
+setup_logger("left_intersection", logger_directory + "left_intersection" + log_name + ".log")
 collision_log = logging.getLogger('collision')
 total_cars_log = logging.getLogger('numbers_of_cars')
 left_intersection_log = logging.getLogger('left_intersection')
