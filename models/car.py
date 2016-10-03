@@ -302,6 +302,9 @@ class Car:
         else:
             self.creation_time = creation_time
 
+    def new_image(self):
+        self.image = image.load(images_directory + "car.png")
+
     class ExceedCarMaximumSpeedError(Exception):
         pass
 
