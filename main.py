@@ -1,15 +1,17 @@
 import os
 import pygame
-from auxiliar_functions import check_close_application, random_car, colliding_cars, display_info_on_car, create_logs
+from auxiliar_functions import check_close_application, random_car, colliding_cars, display_info_on_car, create_logs, \
+    create_random_cars
 from car_controllers.supervisor_level import supervisor_level
 from sys import argv
+import copy
+import threading
 
 
 def main_simulation(graphic_environment, limit, **kwargs):
     wait = "wait" in argv
     images_directory = os.path.dirname(os.path.abspath(__file__)) + "/images/"
     if "log" in kwargs:
-        print "logs creados"
         collision_log, left_intersection_log, total_cars_log = create_logs(kwargs["log"])
 
     new_cars = []
@@ -41,10 +43,21 @@ def main_simulation(graphic_environment, limit, **kwargs):
     while iteration and car_name_counter < limit:
         counter += 1
         if counter % (60/cars_per_second) == 0:
-            if len(cars) > 0:
-                new_cars.append(random_car(car_name_counter, 20, last_lane=cars[len(cars)-1].get_lane()))
+            if "cars" in kwargs:
+                new_car = kwargs["cars"][counter / (60/cars_per_second)-1]
+                kwargs["cars"][counter / (60 / cars_per_second) - 1] = None
+                new_car.set_creation_time()
+                new_car.new_image()
+                new_cars.append(new_car)
             else:
-                new_cars.append(random_car(car_name_counter, 20))
+                if len(cars) > 0:
+                    new_car = random_car(car_name_counter, 20, last_lane=cars[len(cars)-1].get_lane())
+                    new_car.new_image()
+                    new_cars.append(new_car)
+                else:
+                    new_car = random_car(car_name_counter, 20)
+                    new_car.new_image()
+                    new_cars.append(new_car)
             car_name_counter += 1
             new_car = True
         if new_car:
@@ -102,8 +115,12 @@ def main_simulation(graphic_environment, limit, **kwargs):
             pygame.display.update(screen_rect)
             clock.tick(fps)
 
-    print "Last records. Total collisions: " + str(collisions)
+    print "Last record. Total collisions: " + str(collisions)
 
-car_limit = 250
-main_simulation(False, car_limit, log="_no_graphic")
-main_simulation(True, car_limit, log="_graphic")
+car_limit = 10000
+no_graphic_new_cars = create_random_cars(car_limit)
+graphic_new_cars = copy.deepcopy(no_graphic_new_cars)
+threading.Thread(target=main_simulation, args=(False, car_limit),kwargs={"log": "_no_graphic_comparison",
+                                                                         "cars": no_graphic_new_cars}).start()
+threading.Thread(target=main_simulation, args=(True, car_limit),kwargs={"log": "_graphic_comparison",
+                                                                        "cars": graphic_new_cars}).start()
