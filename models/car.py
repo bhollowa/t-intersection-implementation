@@ -281,7 +281,8 @@ class Car:
         return_string += '"lane":' + str(self.lane) + ','
         return_string += '"speed":' + str(self.get_speed()) + ','
         return_string += '"creation_time":' + str(self.creation_time) + ','
-        return_string += '"left_intersection_time":' + str(self.left_intersection_time)
+        return_string += '"left_intersection_time":' + str(self.left_intersection_time) \
+            if self.left_intersection_time is not None else str(-1)
         return_string += '}'
         return return_string
 
