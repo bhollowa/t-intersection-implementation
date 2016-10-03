@@ -3,12 +3,14 @@ import pygame
 from models.car import Car
 from random import randint
 import logging
+import os
 
 
 white = (255, 255, 255)  # RGB white color representation
 black = (0, 0, 0)  # RGB black color representation
 initial_positions = [(415, 760, 0, 1), (760, 365, 90, 2), (365, 10, 180, 3), (10, 415, 270, 4)]  # initial positions
 # of the cars per lane with the direction they should face.
+logger_directory = os.path.dirname(os.path.abspath(__file__)) + "/logs/"
 
 
 def distance_to_center(**kwargs):
@@ -153,6 +155,18 @@ def setup_logger(logger_name, log_file, level=logging.DEBUG):
     formatter = logging.Formatter('{"time":"%(asctime)s", "message":%(message)s},')
     file_handler = logging.FileHandler(log_file, mode='w')
     file_handler.setFormatter(formatter)
-
     l.setLevel(level)
     l.addHandler(file_handler)
+
+
+def create_logs(log_name):
+    """
+    Function to create the logs of a simulation.
+    :param log_name: <string> name to store the logs (to difference them with the others).
+    :return: tuple with 3 logs in this order: collision, left_intersection, total_cars.
+    """
+    setup_logger("collision" + log_name, logger_directory + "collisions" + log_name + ".log")
+    setup_logger("numbers_of_cars" + log_name, logger_directory + "total_cars" + log_name + ".log")
+    setup_logger("left_intersection" + log_name, logger_directory + "left_intersection" + log_name + ".log")
+    return logging.getLogger('collision' + log_name), logging.getLogger('left_intersection' + log_name),\
+           logging.getLogger('numbers_of_cars' + log_name)
