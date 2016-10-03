@@ -120,7 +120,7 @@ def display_info_on_car(car, display, letter, *args):
         display.blit(letter.render(str(car.get_message().car_name), True, black), (x + 30, y))
 
 
-def random_cars(lanes, name, max_speed):
+def random_cars_from_lanes(lanes, name, max_speed):
     """
     Create x number of new random cars, with x being the length of the lanes list. The cars will be created on the
     specified lanes, the names will start at the name param (must be integer), and the max_speed must be passed.
@@ -133,6 +133,21 @@ def random_cars(lanes, name, max_speed):
     for i in range(len(lanes)):
         new_cars.append(random_car(name+i, max_speed, lane=lanes[i]))
     return new_cars
+
+
+def create_random_cars(number_of_cars):
+    """
+    Create number_of cars and returns them in a list.
+    :param number_of_cars: quantity of cars to be created.
+    :return: cars created
+    """
+    cars = []
+    for i in range(number_of_cars):
+        if len(cars) > 0:
+            cars.append(random_car(i, 20, last_lane=cars[len(cars) - 1].get_lane()))
+        else:
+            cars.append(random_car(i, 20))
+    return cars
 
 
 def create_car_from_json(json_car):
