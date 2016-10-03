@@ -19,9 +19,8 @@ class Car:
     acceleration_rate = 3.0  # meters/seconds*seconds.
     message = Message()
 
-    def __init__(self, name, pos_x=0.0, pos_y=0.0, car_image=image.load(images_directory + "car.png"),
-                 absolute_speed=0.0, direction=0, lane=1, controller=default_controller, creation_time=None,
-                 left_intersection_time=None):
+    def __init__(self, name, pos_x=0.0, pos_y=0.0, absolute_speed=0.0, direction=0, lane=1,
+                 controller=default_controller, creation_time=None, left_intersection_time=None):
         """
 
         :param name: id to identify the car. Integer
@@ -48,12 +47,12 @@ class Car:
         self.pos_y = pos_y
         self.direction = direction
         self.absolute_speed = absolute_speed
-        self.image = car_image
-        self.rotated_image = transform.rotate(car_image, self.direction)  # image of the car rotated
-        self.rotated_image = transform.scale(self.rotated_image, (  # reduction of the size of the image
-            int(self.rotated_image.get_rect().w * 0.1), int(self.rotated_image.get_rect().h * 0.1)))
-        self.screen_car = self.rotated_image.get_rect()  # rectangle representation of the car
-        self.screen_car.center = self.get_position()  # add the position to the rectangle
+        self.image = None
+        self.rotated_image = None
+        # self.rotated_image = transform.scale(self.rotated_image, (  # reduction of the size of the image
+        #     int(self.rotated_image.get_rect().w * 0.1), int(self.rotated_image.get_rect().h * 0.1)))
+        self.screen_car = None
+        # self.screen_car.center = self.get_position()  # add the position to the rectangle
         self.follower_cars = []  # all the followers of the car will be here, so this car can send it information
         # to the others
         self.follow = False  # True if the car is following some other car
@@ -304,6 +303,11 @@ class Car:
 
     def new_image(self):
         self.image = image.load(images_directory + "car.png")
+        self.rotated_image = transform.rotate(self.image, self.direction)  # image of the car rotated
+        self.rotated_image = transform.scale(self.rotated_image, (  # reduction of the size of the image
+            int(self.rotated_image.get_rect().w * 0.1), int(self.rotated_image.get_rect().h * 0.1)))
+        self.screen_car = self.rotated_image.get_rect()  # rectangle representation of the car
+        self.screen_car.center = self.get_position()  # add the position to the rectangle
 
     class ExceedCarMaximumSpeedError(Exception):
         pass
