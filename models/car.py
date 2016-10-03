@@ -292,6 +292,16 @@ class Car:
         """
         self.left_intersection_time = time()
 
+    def set_creation_time(self, creation_time=None):
+        """
+        Sets the creation time of a car. Used for simulations with car list.
+        :param creation_time: time of "creation" of the car. If none passed, time at which the function was called.
+        """
+        if creation_time is None:
+            self.creation_time = time()
+        else:
+            self.creation_time = creation_time
+
     class ExceedCarMaximumSpeedError(Exception):
         pass
 
