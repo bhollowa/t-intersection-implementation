@@ -10,7 +10,7 @@ white = (255, 255, 255)  # RGB white color representation
 black = (0, 0, 0)  # RGB black color representation
 initial_positions = [(415, 760, 0, 1), (760, 365, 90, 2), (365, 10, 180, 3), (10, 415, 270, 4)]  # initial positions
 # of the cars per lane with the direction they should face.
-logger_directory = os.path.dirname(os.path.abspath(__file__)) + "/logs/"
+logger_directory = os.path.dirname(os.path.abspath(__file__)) + "/../logs/"
 
 
 def distance_to_center(**kwargs):
