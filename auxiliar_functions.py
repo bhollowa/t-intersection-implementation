@@ -136,18 +136,21 @@ def random_cars_from_lanes(lanes, name, max_speed):
     return new_cars
 
 
-def create_random_cars(number_of_cars):
+def create_random_cars(number_of_cars, check_last_lane):
     """
     Create number_of cars and returns them in a list.
     :param number_of_cars: quantity of cars to be created.
     :return: cars created
     """
     cars = []
+    min_speed = 10
+    max_speed = 20
+    last_lane = -1
     for i in range(number_of_cars):
-        if len(cars) > 0:
-            cars.append(random_car(i, 20, last_lane=cars[len(cars) - 1].get_lane()))
-        else:
-            cars.append(random_car(i, 20))
+        new_car = random_car(i, min_speed, max_speed, last_lane=last_lane)
+        if check_last_lane:
+            last_lane = new_car.get_lane()
+        cars.append(new_car)
     return cars
 
 
