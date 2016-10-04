@@ -1,9 +1,10 @@
-from json import JSONDecoder
-from datetime import datetime
-from auxiliar_functions import create_car_from_json, colliding_cars, check_close_application, display_info_on_car
-from car_controllers.follower_controller import follower_controller
-import pygame
 import os
+import pygame
+from datetime import datetime
+from json import JSONDecoder
+
+from auxiliary_functions.auxiliar_functions import create_car_from_json, colliding_cars, check_close_application, display_info_on_car
+from car_controllers.follower_controller import follower_controller
 
 images_directory = os.path.dirname(os.path.abspath(__file__)) + "/../images/"
 
