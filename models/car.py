@@ -319,18 +319,3 @@ class Car:
             if self.get_rect().colliderect(car.get_rect()):
                 return True
         return False
-
-    class ExceedCarMaximumSpeedError(Exception):
-        pass
-
-    class StopSpeedReached(Exception):
-        pass
-
-    class ExceedWheelTurningException(Exception):
-        pass
-
-    class ExceedTurningSpeedException(Exception):
-        pass
-
-    class CollideWithCarException(Exception):
-        pass
