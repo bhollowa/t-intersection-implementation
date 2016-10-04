@@ -53,6 +53,7 @@ class Car:
         self.follow = False  # True if the car is following some other car
         self.active_supervisory = False
         self.supervisory_level = supervisor_level.supervisor_level
+        self.new_car = True
 
     def __str__(self):
         """
@@ -319,3 +320,10 @@ class Car:
             if self.get_rect().colliderect(car.get_rect()):
                 return True
         return False
+
+    def is_supervisor(self):
+        """
+        Check if this has it's supervisor level active.
+        :return: <boolean>True if this car is running the supervisro level. False otherwise.
+        """
+        return self.active_supervisory
