@@ -4,6 +4,7 @@ from models.message import Message
 import os
 from car_controllers import deafult_controller, supervisor_level
 from time import time
+from auxiliar_functions import separate_new_and_old_cars
 
 images_directory = os.path.dirname(os.path.abspath(__file__)) + "/../images/"
 
@@ -334,3 +335,24 @@ class Car:
         :return: <boolean> True if the car is new (and haven't been assigned a following car). False otherwise.
         """
         return self.new_car
+
+    def get_supervisory_level(self):
+        """
+        Get the supervisory level.
+        :return: supervisory level
+        """
+        return self.supervisory_level
+
+    def execute_supervisory_level(self, car_list):
+        """
+        Separate old cars from new cars of the car list and executes the supervisory level.
+        :param car_list: <list> cars at the intersection
+        """
+        new_cars, old_cars = separate_new_and_old_cars(car_list)
+        self.get_supervisory_level()(new_cars, old_cars)
+
+    def set_active_supervisory_level(self):
+        """
+        Sets the active_supervisory to True
+        """
+        self.active_supervisory = True
