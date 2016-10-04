@@ -72,6 +72,7 @@ def random_car(name, min_speed, max_speed, **kwargs):
     car. the lane can be passed in kwargs value if the lane wants to be specified.
     Example: "random_car(4,20,lane=3)"
     :param name: name of the car.
+    :param min_speed: minimum speed of a car.
     :param max_speed: maximum speed of the car.
     :param kwargs: the lane can be passed in this argument in the "lane" argument.
     :return: a Car object.
