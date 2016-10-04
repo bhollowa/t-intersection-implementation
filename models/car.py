@@ -2,7 +2,7 @@ from math import pi, cos, sin, sqrt, pow
 from pygame import image, transform
 from models.message import Message
 import os
-from car_controllers.deafult_controller import default_controller
+from car_controllers import deafult_controller, supervisor_level
 from time import time
 
 images_directory = os.path.dirname(os.path.abspath(__file__)) + "/../images/"
@@ -20,14 +20,12 @@ class Car:
     message = Message()
 
     def __init__(self, name, pos_x=0.0, pos_y=0.0, absolute_speed=0.0, direction=0, lane=1,
-                 controller=default_controller, creation_time=None, left_intersection_time=None):
+                 controller=deafult_controller.default_controller, creation_time=None, left_intersection_time=None):
         """
 
         :param name: id to identify the car. Integer
         :param pos_x: x value of the car position.
         :param pos_y: y value of the car position.
-        :param car_image: object that represents the rectangle of the car. Also image used to display in graphic
-        environment.
         :param absolute_speed: absolute speed of the car.
         :param direction: direction of the car. Represented in degrees.
         :param lane: lane in which the car is travelling.
@@ -49,13 +47,12 @@ class Car:
         self.absolute_speed = absolute_speed
         self.image = None
         self.rotated_image = None
-        # self.rotated_image = transform.scale(self.rotated_image, (  # reduction of the size of the image
-        #     int(self.rotated_image.get_rect().w * 0.1), int(self.rotated_image.get_rect().h * 0.1)))
         self.screen_car = None
-        # self.screen_car.center = self.get_position()  # add the position to the rectangle
         self.follower_cars = []  # all the followers of the car will be here, so this car can send it information
         # to the others
         self.follow = False  # True if the car is following some other car
+        self.active_supervisory = False
+        self.supervisory_level = supervisor_level.supervisor_level
 
     def __str__(self):
         """
