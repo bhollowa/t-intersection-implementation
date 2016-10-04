@@ -139,9 +139,11 @@ def random_cars_from_lanes(lanes, name, max_speed):
 def create_random_cars(number_of_cars, check_last_lane):
     """
     Create number_of cars and returns them in a list.
-    :param number_of_cars: quantity of cars to be created.
-    :return: cars created
+    :param number_of_cars: <integer> quantity of cars to be created.
+    :param check_last_lane: <boolean> if True, next car created will have a different lane
+    :return: <list> cars created
     """
+    import time
     cars = []
     min_speed = 10
     max_speed = 20
@@ -151,6 +153,7 @@ def create_random_cars(number_of_cars, check_last_lane):
         if check_last_lane:
             last_lane = new_car.get_lane()
         cars.append(new_car)
+        time.sleep(1)
     return cars
 
 
@@ -189,3 +192,22 @@ def create_logs(log_name):
     setup_logger("left_intersection" + log_name, logger_directory + "left_intersection" + log_name + ".log")
     return logging.getLogger('collision' + log_name), logging.getLogger('left_intersection' + log_name),\
            logging.getLogger('numbers_of_cars' + log_name)
+
+
+def separate_new_and_old_cars(car_list):
+    """
+    Function to separate old from new cars. Return a tuple with 2 lists: one with new cars, one with old cars
+    ordered by creation time.
+    :param car_list: <list> cars at the intersection.
+    :return: (<car_list>,<car_list>) Tuple of size 2 with two list: one with new cars, the other with old cars
+    ordered by creation time.
+    """
+    new_cars = []
+    old_cars = []
+    for car in car_list:
+        if car.is_new():
+            new_cars.append(car)
+        else:
+            old_cars.append(car)
+    old_cars.sort(key=lambda x: x.creation_time, reverse=False)
+    return new_cars, old_cars
