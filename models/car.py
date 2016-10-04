@@ -356,3 +356,9 @@ class Car:
         Sets the active_supervisory to True
         """
         self.active_supervisory = True
+
+    def set_old(self):
+        """
+        Sets the new_car variable to False
+        """
+        self.new_car = False
