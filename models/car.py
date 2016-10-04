@@ -327,3 +327,10 @@ class Car:
         :return: <boolean>True if this car is running the supervisro level. False otherwise.
         """
         return self.active_supervisory
+
+    def is_new(self):
+        """
+        Function to check if this car is new in the intersection.
+        :return: <boolean> True if the car is new (and haven't been assigned a following car). False otherwise.
+        """
+        return self.new_car
