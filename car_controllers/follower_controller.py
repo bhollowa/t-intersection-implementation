@@ -10,7 +10,7 @@ def follower_controller(car):
     :param car: car to bre controlled
     :return: new inputs of the car.
     """
-    headway = 280
+    headway = 200
     if not car.follow:
         car.set_controller(default_controller)
     if car.get_message() is not None:
