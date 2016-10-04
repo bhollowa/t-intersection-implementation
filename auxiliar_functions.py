@@ -211,3 +211,15 @@ def separate_new_and_old_cars(car_list):
             old_cars.append(car)
     old_cars.sort(key=lambda x: x.creation_time, reverse=False)
     return new_cars, old_cars
+
+
+def supervisor(car_list):
+    """
+    Check if there is a supervisor car in the car list
+    :param car_list: <list> List of cars.
+    :return: <boolean> True if there is a car with active supervisor level. False otherwise.
+    """
+    for car in car_list:
+        if car.is_supervisor():
+            return True
+    return False
