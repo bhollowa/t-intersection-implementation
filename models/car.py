@@ -302,12 +302,26 @@ class Car:
             self.creation_time = creation_time
 
     def new_image(self):
+        """
+        Creates the image representation of a car, with his rotated image and his screen representation (with the rect).
+        """
         self.image = image.load(images_directory + "car.png")
         self.rotated_image = transform.rotate(self.image, self.direction)  # image of the car rotated
         self.rotated_image = transform.scale(self.rotated_image, (  # reduction of the size of the image
             int(self.rotated_image.get_rect().w * 0.1), int(self.rotated_image.get_rect().h * 0.1)))
         self.screen_car = self.rotated_image.get_rect()  # rectangle representation of the car
         self.screen_car.center = self.get_position()  # add the position to the rectangle
+
+    def collide(self, list_of_cars):
+        """
+        Check if a car collides with any car of the list of cars.
+        :param list_of_cars: cars to check if this car is colliding with.
+        :return: True if a collision is detected, False otherwise,
+        """
+        for car in list_of_cars:
+            if self.get_rect().colliderect(car.get_rect()):
+                return True
+        return False
 
     class ExceedCarMaximumSpeedError(Exception):
         pass
