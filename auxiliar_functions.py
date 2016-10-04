@@ -66,7 +66,7 @@ def check_close_application(user_input):
     return True
 
 
-def random_car(name, max_speed, **kwargs):
+def random_car(name, min_speed, max_speed, **kwargs):
     """
     Generates a random car with the given name. The max speed is used to give an speed not giver than the maximum a the
     car. the lane can be passed in kwargs value if the lane wants to be specified.
@@ -84,7 +84,7 @@ def random_car(name, max_speed, **kwargs):
             if new_lane == kwargs["last_lane"] - 1:
                 new_lane = (new_lane+1) % 4
         pos_x, pos_y, direction, lane = initial_positions[new_lane]
-    initial_speed = randint(0, max_speed)
+    initial_speed = randint(min_speed, max_speed)
     return Car(str(name), pos_x, pos_y, direction=direction, lane=lane, absolute_speed=initial_speed)
 
 
