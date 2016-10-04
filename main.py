@@ -3,13 +3,14 @@ import pygame
 from auxiliar_functions import check_close_application, random_car, colliding_cars, display_info_on_car, create_logs, \
     create_random_cars
 from car_controllers.supervisor_level import supervisor_level
-from sys import argv
 import copy
 import threading
 
 
-def main_simulation(graphic_environment, limit, **kwargs):
-    wait = "wait" in argv
+def main_simulation(graphic_environment, limit, *args, **kwargs):
+    attack_supervisory = "attack_supervisory" in args
+    wait = "wait" in args
+    no_same_lane = "no_same_line" in args
     images_directory = os.path.dirname(os.path.abspath(__file__)) + "/images/"
     if "log" in kwargs:
         collision_log, left_intersection_log, total_cars_log = create_logs(kwargs["log"])
@@ -39,6 +40,10 @@ def main_simulation(graphic_environment, limit, **kwargs):
     collision = False
     collision_message = ""
     left_intersection_cars = []
+    min_speed = 10
+    max_speed = 20
+    last_lane = -1
+    not_created_vehicles = 0
 
     while iteration and car_name_counter < limit:
         counter += 1
@@ -49,19 +54,21 @@ def main_simulation(graphic_environment, limit, **kwargs):
                 new_car.set_creation_time()
                 new_car.new_image()
                 new_cars.append(new_car)
+                car_name_counter += 1
+                new_car = True
             else:
-                if len(cars) > 0:
-                    new_car = random_car(car_name_counter, 20, last_lane=cars[len(cars)-1].get_lane())
-                    new_car.new_image()
+                new_car = random_car(car_name_counter, min_speed, max_speed, last_lane=last_lane)
+                if no_same_lane:
+                    last_lane = new_car.get_lane()
+                new_car.new_image()
+                if not new_car.collide(cars):
                     new_cars.append(new_car)
+                    car_name_counter += 1
+                    new_car = True
                 else:
-                    new_car = random_car(car_name_counter, 20)
-                    new_car.new_image()
-                    new_cars.append(new_car)
-            car_name_counter += 1
-            new_car = True
+                    not_created_vehicles += 1
         if new_car:
-            new_cars = supervisor_level(new_cars, cars)
+            new_cars = supervisor_level(new_cars, cars, attack_supervisory)
             new_car = False
         if graphic_environment:
             events = pygame.event.get()
@@ -115,12 +122,14 @@ def main_simulation(graphic_environment, limit, **kwargs):
             pygame.display.update(screen_rect)
             clock.tick(fps)
 
-    print "Last record. Total collisions: " + str(collisions)
+    print "Last record. Total collisions: " + str(collisions), "Not created vehicles: " + str(not_created_vehicles)
 
 car_limit = 10000
-no_graphic_new_cars = create_random_cars(car_limit)
-graphic_new_cars = copy.deepcopy(no_graphic_new_cars)
-threading.Thread(target=main_simulation, args=(False, car_limit),kwargs={"log": "_no_graphic_comparison",
-                                                                         "cars": no_graphic_new_cars}).start()
-threading.Thread(target=main_simulation, args=(True, car_limit),kwargs={"log": "_graphic_comparison",
-                                                                        "cars": graphic_new_cars}).start()
+threading.Thread(target=main_simulation, args=(False, car_limit, "no_same_lane"),
+                 kwargs={"log": "_no_same_lane"}).start()
+threading.Thread(target=main_simulation, args=(False, car_limit),
+                 kwargs={"log": "_same_lane"}).start()
+threading.Thread(target=main_simulation, args=(False, car_limit, "attack_supervisory", "no_same_lane"),
+                 kwargs={"log": "_attack_no_same_lane"}).start()
+threading.Thread(target=main_simulation, args=(False, car_limit, "attack_supervisory"),
+                 kwargs={"log": "_attack_same_lane"}).start()
