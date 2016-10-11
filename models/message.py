@@ -1,4 +1,5 @@
 from math import pi, cos, sin, sqrt, pow
+from time import time
 
 
 class Message:
@@ -17,12 +18,18 @@ class Message:
             self.direction = car.get_direction()
             self.speed = car.get_speed()
             self.car_name = car.get_name()
+            self.lane = car.get_lane()
+            self.creation_time = car.get_creation_time()
+            self.new = car.is_new()
         else:
             self.car_name = -1
             self.pos_x = 384
             self.pos_y = 384
             self.direction = 0
             self.speed = 10
+            self.lane = 1
+            self.creation_time = time()
+            self.new = True
 
     def distance_to_center(self):
         """
