@@ -21,12 +21,9 @@ def supervisor_level(new_cars, old_cars, attack=False):
                 if new_car.cross_path(other_car):
                     other_car.add_follower(new_car)
                     new_car.set_controller(follower_controller)
-                    old_cars.append(new_car)
                     new_car.start_following()
                     break
             if not new_car.is_following():
-                old_cars.append(new_car)
                 new_car.set_controller(default_controller)
         else:
-            old_cars.append(new_car)
             new_car.set_controller(default_controller)
