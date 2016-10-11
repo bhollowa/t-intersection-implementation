@@ -31,6 +31,7 @@ class Message:
             self.creation_time = time()
             self.new = True
         self.receiver = None
+        self.type = "info"
 
     def distance_to_center(self):
         """
@@ -78,3 +79,17 @@ class Message:
         :return: The receiver of the message.
         """
         return self.receiver
+
+    def get_type(self):
+        """
+        Returns the type of the message
+        :return: <string> Message type
+        """
+        return self.type
+
+    def set_type(self, message_type):
+        """
+        Sets the type of the message
+        :param message_type: <string> type of the mesage
+        """
+        self.type = message_type
