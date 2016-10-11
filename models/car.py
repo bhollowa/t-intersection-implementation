@@ -210,6 +210,18 @@ class Car:
         """
         self.set_controller(default_controller)
 
+    def clear_supervisor_messages(self):
+        """
+        Sets the variable supervisor_messages to an empty list.
+        """
+        self.supervisor_messages = []
+
+    def clear_supervisor_results_messages(self):
+        """
+        Sets the variable supervisor_result_messages to an empty list.
+        """
+        self.supervisor_result_messages = []
+
     def stop_following(self):
         """
         Set the variable follow to False to indicate that this car isn't following other.
@@ -272,10 +284,19 @@ class Car:
                     following_car_message = Message()
                     following_car_message.set_receiver(new_car_message.get_name())
                     following_car_message.set_type("not_following")
+                    self.supervisor_result_messages.append(following_car_message)
             else:
                 following_car_message = Message()
                 following_car_message.set_receiver(new_car_message.get_name())
                 following_car_message.set_type("not_following")
+                self.supervisor_result_messages.append(following_car_message)
+
+    def get_supervisor_result_messages(self):
+        """
+        Returns the list of result messages of the supervisor level.
+        :return: <list> messages result of the supervisor_level.
+        """
+        return self.supervisor_result_messages
 
     def get_followers(self):
         """
