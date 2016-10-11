@@ -50,3 +50,17 @@ class Message:
         :return: True if the car is new at the intersection. False otherwise.
         """
         return self.new
+
+    def cross_path(self, other_car_message):
+        """
+        Check if the path of one car crosses tih the path o f another. It is true if the other car is the same lane
+        or if the other car is in one of the perpendicular lanes.
+        :param other_car_message: information of the other car in a message.
+        :return: True if the paths does not crosses, False otherwise.
+        """
+        if self.lane == 1 and other_car_message.lane == 3 or self.lane == 3 and other_car_message.lane == 1:
+            return False
+        elif self.lane == 2 and other_car_message.lane == 4 or self.lane == 4 and other_car_message.lane == 2:
+            return False
+        else:
+            return True
