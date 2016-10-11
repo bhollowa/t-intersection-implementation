@@ -11,7 +11,7 @@ def follower_controller(car):
     :return: new inputs of the car.
     """
     headway = 200
-    if not car.follow:
+    if not car.is_following():
         car.set_controller(default_controller)
     if car.get_message() is not None:
         if car.distance_to_center() - car.get_message().distance_to_center() < headway:
