@@ -30,6 +30,7 @@ class Message:
             self.lane = 1
             self.creation_time = time()
             self.new = True
+        self.receiver = None
 
     def distance_to_center(self):
         """
@@ -64,3 +65,16 @@ class Message:
             return False
         else:
             return True
+
+    def set_receiver(self, receiver):
+        """
+        Sets the receiver of the message.
+        """
+        self.receiver = receiver
+
+    def get_receiver(self):
+        """
+        Gets the receiver of this message.
+        :return: The receiver of the message.
+        """
+        return self.receiver
