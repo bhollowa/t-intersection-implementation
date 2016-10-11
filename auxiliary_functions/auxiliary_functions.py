@@ -5,7 +5,6 @@ from random import randint
 import logging
 import os
 
-
 white = (255, 255, 255)  # RGB white color representation
 black = (0, 0, 0)  # RGB black color representation
 initial_positions = [(415, 760, 0, 1), (760, 365, 90, 2), (365, 10, 180, 3), (10, 415, 270, 4)]  # initial positions
@@ -78,12 +77,12 @@ def random_car(name, min_speed, max_speed, **kwargs):
     :return: a Car object.
     """
     if "lane" in kwargs:
-        pos_x, pos_y, direction, lane = initial_positions[kwargs["lane"]-1]
+        pos_x, pos_y, direction, lane = initial_positions[kwargs["lane"] - 1]
     else:
         new_lane = randint(0, len(initial_positions) - 1)
         if "last_lane" in kwargs:
             if new_lane == kwargs["last_lane"] - 1:
-                new_lane = (new_lane+1) % 4
+                new_lane = (new_lane + 1) % 4
         pos_x, pos_y, direction, lane = initial_positions[new_lane]
     initial_speed = randint(min_speed, max_speed)
     return Car(str(name), pos_x, pos_y, direction=direction, lane=lane, absolute_speed=initial_speed)
@@ -96,7 +95,7 @@ def colliding_cars(car_list):
     :return: tuple with the colliding cars and True, if the cars collided. None and false otherwise.
     """
     for i in range(len(car_list)):
-        for j in range(i+1, len(car_list)):
+        for j in range(i + 1, len(car_list)):
             if car_list[i].screen_car.colliderect(car_list[j].screen_car):
                 return (car_list[i], car_list[j]), True
     return None, False
@@ -132,7 +131,7 @@ def random_cars_from_lanes(lanes, name, max_speed):
     """
     new_cars = []
     for i in range(len(lanes)):
-        new_cars.append(random_car(name+i, max_speed, lane=lanes[i]))
+        new_cars.append(random_car(name + i, max_speed, lane=lanes[i]))
     return new_cars
 
 
@@ -153,7 +152,6 @@ def create_random_cars(number_of_cars, check_last_lane):
         if check_last_lane:
             last_lane = new_car.get_lane()
         cars.append(new_car)
-        time.sleep(1)
     return cars
 
 
@@ -165,7 +163,7 @@ def create_car_from_json(json_car):
     :param json_car: json representation of a car
     :return: a new car with the json_car information
     """
-    pos_x, pos_y, direction, lane = initial_positions[json_car["lane"]-1]
+    pos_x, pos_y, direction, lane = initial_positions[json_car["lane"] - 1]
     left_time = json_car["left_intersection_time"] if "left_intersection_time" in json_car else None
     car = Car(json_car["car_name"], pos_x, pos_y, direction=direction, absolute_speed=json_car["speed"], lane=lane,
               creation_time=json_car["creation_time"], left_intersection_time=left_time)
@@ -190,8 +188,8 @@ def create_logs(log_name):
     setup_logger("collision" + log_name, logger_directory + "collisions" + log_name + ".log")
     setup_logger("numbers_of_cars" + log_name, logger_directory + "total_cars" + log_name + ".log")
     setup_logger("left_intersection" + log_name, logger_directory + "left_intersection" + log_name + ".log")
-    return logging.getLogger('collision' + log_name), logging.getLogger('left_intersection' + log_name),\
-           logging.getLogger('numbers_of_cars' + log_name)
+    return logging.getLogger('collision' + log_name), logging.getLogger(
+        'left_intersection' + log_name), logging.getLogger('numbers_of_cars' + log_name)
 
 
 def separate_new_and_old_cars(car_list):
