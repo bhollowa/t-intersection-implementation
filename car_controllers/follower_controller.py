@@ -1,4 +1,4 @@
-from car_controllers.deafult_controller import default_controller
+from car_controllers.default_controller import default_controller
 
 
 def follower_controller(car):
