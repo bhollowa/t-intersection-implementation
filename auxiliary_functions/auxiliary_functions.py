@@ -116,8 +116,8 @@ def display_info_on_car(car, display, letter, *args):
         display.blit(letter.render(str(car.name), True, black), (x, y))
     if "speed" in args:
         display.blit(letter.render(str(car.get_speed()), True, black), (x - 30, y))
-    if "following" in args and car.get_message() is not None:
-        display.blit(letter.render(str(car.get_message().car_name), True, black), (x + 30, y))
+    if "following" in args and car.get_following_car_message() is not None:
+        display.blit(letter.render(str(car.get_following_car_message().car_name), True, black), (x + 30, y))
 
 
 def random_cars_from_lanes(lanes, name, max_speed):
