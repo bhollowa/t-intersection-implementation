@@ -13,11 +13,12 @@ def follower_controller(car):
     headway = 200
     if not car.is_following():
         car.set_controller(default_controller)
-    if car.get_message() is not None:
-        if car.distance_to_center() - car.get_message().distance_to_center() < headway:
-            car.set_speed(car.get_message().speed - 10)
+    car_message = car.get_following_car_message()
+    if car_message is not None:
+        if car.distance_to_center() - car_message.distance_to_center() < headway:
+            car.set_speed(car_message.speed - 10)
             return -2, 0
-        elif car.distance_to_center() - car.get_message().distance_to_center() < headway*3/2:
-            car.set_speed(car.get_message().speed)
+        elif car.distance_to_center() - car_message.distance_to_center() < headway*3/2:
+            car.set_speed(car_message.speed)
             return -1, 0
     return 1, 0
