@@ -32,6 +32,7 @@ class Message:
             self.new = True
         self.receiver = None
         self.type = "info"
+        self.follower = None
 
     def distance_to_center(self):
         """
@@ -100,3 +101,17 @@ class Message:
         :return: Name of the car
         """
         return self.car_name
+
+    def get_follower(self):
+        """
+        Return the follower
+        :return: follower
+        """
+        return self.follower
+
+    def set_follower(self, follower):
+        """
+        Sets the follower variable
+        :param follower: follower name
+        """
+        self.follower = follower
