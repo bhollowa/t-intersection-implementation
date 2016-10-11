@@ -42,3 +42,11 @@ class Message:
         y = 1 if self.pos_y % 384 == 0 else 0
         sign = cos(self.direction * pi / 180)*(self.pos_y - 384)/abs(self.pos_y - 384 + y) + sin(self.direction * pi / 180)*(self.pos_x - 384)/abs(self.pos_x - 384 + x)
         return sign*sqrt(pow(self.pos_x - 384,2) + pow(self.pos_y - 384, 2))
+
+    def is_new(self):
+        """
+        Check if the car that created this message is new at the intersection. a car is new at an intersection if it
+        hasn't been analyzed by a supervisory level.
+        :return: True if the car is new at the intersection. False otherwise.
+        """
+        return self.new
