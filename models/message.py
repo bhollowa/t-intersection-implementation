@@ -93,3 +93,10 @@ class Message:
         :param message_type: <string> type of the mesage
         """
         self.type = message_type
+
+    def get_car_name(self):
+        """
+        Gets the name which identifies the car.
+        :return: Name of the car
+        """
+        return self.car_name
