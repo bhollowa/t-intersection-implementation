@@ -201,14 +201,16 @@ class Car:
         """
         Set the car variables to follow another car.
         """
-        self.set_controller(follower_controller)
+        self.set_controller(follower_controller.follower_controller)
         self.start_following()
+        self.set_old()
 
     def process_not_following_message(self):
         """
         Sets the car controller as default, as it is not following any other car.
         """
-        self.set_controller(default_controller)
+        self.set_controller(default_controller.default_controller)
+        self.set_old()
 
     def clear_supervisor_messages(self):
         """
@@ -270,19 +272,20 @@ class Car:
                 for i in range(len(old_cars_messages)):
                     other_car_message = old_cars_messages[len(old_cars_messages) - (i + 1)]
                     if new_car_message.cross_path(other_car_message):
+                        new_car_message.set_follow(True)
                         following_car_message = Message()
-                        following_car_message.set_receiver(new_car_message.get_name())
+                        following_car_message.set_receiver(new_car_message.get_car_name())
                         following_car_message.set_type("following")
                         follower_car_message = Message()
-                        follower_car_message.set_receiver(other_car_message.get_name())
-                        follower_car_message.set_follower(new_car_message.get_name())
+                        follower_car_message.set_receiver(other_car_message.get_car_name())
+                        follower_car_message.set_follower(new_car_message.get_car_name())
                         follower_car_message.set_type("follower")
                         self.supervisor_result_messages.append(following_car_message)
                         self.supervisor_result_messages.append(follower_car_message)
                         break
-                if not new_car_message.follow:
+                if not new_car_message.get_follow():
                     following_car_message = Message()
-                    following_car_message.set_receiver(new_car_message.get_name())
+                    following_car_message.set_receiver(new_car_message.get_car_name())
                     following_car_message.set_type("not_following")
                     self.supervisor_result_messages.append(following_car_message)
             else:
