@@ -33,6 +33,7 @@ class Message:
         self.receiver = None
         self.type = "info"
         self.follower = None
+        self.car = None
 
     def distance_to_center(self):
         """
@@ -115,3 +116,17 @@ class Message:
         :param follower: follower name
         """
         self.follower = follower
+
+    def set_car(self, car):
+        """
+        Sets the car so it can be used at the supervisory level.
+        :param car: reference of the car.
+        """
+        self.car = car
+
+    def get_car(self):
+        """
+        Returns the car variable.
+        :return: car variable
+        """
+        return self.car
