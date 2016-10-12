@@ -18,6 +18,7 @@ def main_simulation(graphic_environment, limit, *args, **kwargs):
     if log:
         collision_log, left_intersection_log, total_cars_log = create_logs(kwargs["log"])
         left_intersection_cars = []
+        collision_message = ""
     cars = []
     iteration = True
     intersection = pygame.Rect(280, 280, 210, 210)
@@ -39,7 +40,6 @@ def main_simulation(graphic_environment, limit, *args, **kwargs):
     car_name_counter = 0
     cars_per_second = 4
     collision = False
-    collision_message = ""
     min_speed = 10
     max_speed = 20
     last_lane = -1
@@ -49,22 +49,18 @@ def main_simulation(graphic_environment, limit, *args, **kwargs):
         counter += 1
         if counter % (60/cars_per_second) == 0:
             if "cars" in kwargs:
-                new_car = kwargs["cars"][counter / (60/cars_per_second)-1]
-                kwargs["cars"][counter / (60 / cars_per_second) - 1] = None
+                new_car = kwargs["cars"][car_name_counter]
                 new_car.set_creation_time()
-                new_car.new_image()
-                cars.append(new_car)
-                car_name_counter += 1
             else:
                 new_car = random_car(car_name_counter, min_speed, max_speed, last_lane=last_lane)
                 if no_same_lane:
                     last_lane = new_car.get_lane()
+            if not new_car.collide(cars):
                 new_car.new_image()
-                if not new_car.collide(cars):
-                    cars.append(new_car)
-                    car_name_counter += 1
-                else:
-                    not_created_vehicles += 1
+                cars.append(new_car)
+                car_name_counter += 1
+            else:
+                not_created_vehicles += 1
         if graphic_environment:
             events = pygame.event.get()
             iteration = check_close_application(events)
@@ -73,23 +69,9 @@ def main_simulation(graphic_environment, limit, *args, **kwargs):
             new_cars, old_cars = separate_new_and_old_cars(cars)
             supervisor_level(new_cars, old_cars, attack_supervisory)
         for car in cars:
-            if car.is_supervisor() and distributed:
-                for this_car in cars:
-                    car.add_supervisor_message(this_car.get_info_message())
-                car.supervisor_level()
-                for message in car.get_supervisor_result_messages():
-                    receiver = None
-                    for this_car in cars:
-                        if message.get_receiver() == this_car.get_name():
-                            receiver = this_car
-                        if message.get_type() is "follower":
-                            if message.get_follower() == this_car.get_name():
-                                message.set_car(this_car)
-                    receiver.receive(message)
-                car.clear_supervisor_messages()
-                car.clear_supervisor_results_messages()
             if not supervisor(cars) and car.is_new() and distributed:  # TODO: change name of supervisor function and move it to car class
                 car.set_active_supervisory_level()
+            if car.is_supervisor() and distributed:
                 for this_car in cars:
                     car.add_supervisor_message(this_car.get_info_message())
                 car.supervisor_level()
@@ -124,13 +106,14 @@ def main_simulation(graphic_environment, limit, *args, **kwargs):
                 collision = True
                 collision_list.append(code)
                 collisions += 1
-                collision_message = '{"collision_code":"' + code + '", "collision_initial_conditions":['
-                for car in cars:
-                    collision_message += car.to_json() + ','
-                collision_message = collision_message[:len(collision_message)-1] + '],"collided_cars":['
-                for car in collided_cars:
-                    collision_message += car.to_json() + ','
-                collision_message = collision_message[:len(collision_message) - 1] + ']}'
+                if log:
+                    collision_message = '{"collision_code":"' + code + '", "collision_initial_conditions":['
+                    for car in cars:
+                        collision_message += car.to_json() + ','
+                    collision_message = collision_message[:len(collision_message)-1] + '],"collided_cars":['
+                    for car in collided_cars:
+                        collision_message += car.to_json() + ','
+                    collision_message = collision_message[:len(collision_message) - 1] + ']}'
                 if graphic_environment and wait:
                     pygame.time.wait(10000)
         if "log" in kwargs:
@@ -161,7 +144,7 @@ def print_percentages(times_tuple):
     total_time = (times_tuple[2] - times_tuple[0]).total_seconds()
     graphic_time = (times_tuple[1] - times_tuple[0]).total_seconds()
     no_graphic_time = (times_tuple[2] - times_tuple[1]).total_seconds()
-    final_string = "Total simulation time: "+ str(total_time)
+    final_string = "Total simulation time: " + str(total_time)
     final_string += "\nTotal graphic time: " + str(graphic_time)
     final_string += "\nTotal no graphic time: " + str(no_graphic_time)
     final_string += "\nPercentages:\n   -graphic_time/total_time: " + str(graphic_time / total_time)
@@ -169,23 +152,7 @@ def print_percentages(times_tuple):
     final_string += "\n   -no_graphic_time/graphic_time: " + str(no_graphic_time / graphic_time)
     print final_string
 
-
-# initial_times = []
-# mid_times = []
-# final_times = []
-# for i in range(10):
-#     car_limit = 100
-#     cars = create_random_cars(car_limit, False)
-#     other_cars = copy.deepcopy(cars)
-#     initial_times.append(datetime.now())
-#     main_simulation(True, car_limit, "distributed", cars=cars)
-#     mid_times.append(datetime.now())
-#     main_simulation(False, car_limit, "distributed", cars=other_cars)
-#     final_times.append(datetime.now())
-#     print "\nIteration " + str(i+1) + ":\n"
-#     print_percentages((initial_times[i], mid_times[i], final_times[i]))
-
 # threading.Thread(target=main_simulation, args=(False, car_limit, "distributed")).start()
 # threading.Thread(target=main_simulation, args=(False, car_limit, "distributed")).start()
 car_limit = 1000000
-main_simulation(True, car_limit, "distributed")
+main_simulation(False, car_limit, log="_messaged_no_distribution")
