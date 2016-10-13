@@ -8,6 +8,40 @@ from datetime import datetime
 import copy
 
 
+def show_caravan(cars, screen):
+    size = (50, 50)
+    leaders = []
+    not_leaders = []
+    not_collision_surface = pygame.Surface((50, 50))
+    palette = [(0, 0, 255, 0), (255, 0, 0, 0), (0, 255, 0, 255)]
+    not_collision_surface.fill(palette[0])
+    collision_surface = pygame.Surface((50, 50))
+    collision_surface.fill(palette[1])
+
+    for car in cars:
+        if not car.get_following_car_name() in [cars[k].get_name() for k in range(len(cars))]:
+            leaders.append(car)
+        else:
+            not_leaders.append(car)
+
+    virtual_cars = []
+    for i in range(len(leaders)):
+        virtual_cars.append((leaders[i], pygame.Rect((1700, 400 * (i + 1) / len(leaders)), size)))
+    for i in range(len(not_leaders)):
+        for car in virtual_cars:
+            if car[0].get_name() == not_leaders[i].get_following_car_name():
+                new_rect = pygame.Rect((car[1].left - 100, car[1].top), size)
+                for virtual_car in virtual_cars:
+                    if new_rect.colliderect(virtual_car[1]):
+                        new_rect.top += 50
+                        virtual_car[1].top -= 50
+                virtual_cars.append((not_leaders[i], new_rect))
+                break
+
+    for car in virtual_cars:
+        screen.blit(not_collision_surface, car[1])
+
+
 def main_simulation(graphic_environment, limit, *args, **kwargs):
     attack_supervisory = "attack_supervisory" in args
     wait = "wait" in args
@@ -27,15 +61,16 @@ def main_simulation(graphic_environment, limit, *args, **kwargs):
 
     if graphic_environment:
         fps = 60
-        screen = pygame.display.set_mode((768, 768))
-        screen_rect = screen.get_rect()
-        bg = pygame.image.load(images_directory + "background.jpg")
+        screen = pygame.display.set_mode((1768, 768))
+        intersection_bg = pygame.image.load(images_directory + "background.jpg")
+        background = pygame.Surface(screen.get_size())
+        background = background.convert()
+        background.fill((250, 250, 250))
         clock = pygame.time.Clock()
         pygame.init()
         font = pygame.font.SysFont('Arial', 20)
         pygame.display.set_caption('Car simulation')
-    else:
-        screen_rect = pygame.Rect(0, 0, 768, 768)
+    screen_rect = pygame.Rect(0, 0, 768, 768)
     counter = 0
     car_name_counter = 0
     cars_per_second = 4
@@ -51,12 +86,13 @@ def main_simulation(graphic_environment, limit, *args, **kwargs):
             if "cars" in kwargs:
                 new_car = kwargs["cars"][car_name_counter]
                 new_car.set_creation_time()
+                new_car.new_image()
             else:
                 new_car = random_car(car_name_counter, min_speed, max_speed, last_lane=last_lane)
+                new_car.new_image()
                 if no_same_lane:
                     last_lane = new_car.get_lane()
             if not new_car.collide(cars):
-                new_car.new_image()
                 cars.append(new_car)
                 car_name_counter += 1
             else:
@@ -64,7 +100,8 @@ def main_simulation(graphic_environment, limit, *args, **kwargs):
         if graphic_environment:
             events = pygame.event.get()
             iteration = check_close_application(events)
-            screen.blit(bg, (0, 0))
+            screen.blit(background, (0, 0))
+            screen.blit(intersection_bg, (0, 0))
         if not distributed:
             new_cars, old_cars = separate_new_and_old_cars(cars)
             supervisor_level(new_cars, old_cars, attack_supervisory)
@@ -132,7 +169,8 @@ def main_simulation(graphic_environment, limit, *args, **kwargs):
                 log_message = log_message[:len(log_message)-1] + ']'
                 left_intersection_log.info(log_message)
         if graphic_environment:
-            pygame.display.update(screen_rect)
+            show_caravan(cars, screen)
+            pygame.display.update(screen.get_rect())
             clock.tick(fps)
     if graphic_environment:
         pygame.display.quit()
@@ -155,4 +193,4 @@ def print_percentages(times_tuple):
 # threading.Thread(target=main_simulation, args=(False, car_limit, "distributed")).start()
 # threading.Thread(target=main_simulation, args=(False, car_limit, "distributed")).start()
 car_limit = 1000000
-main_simulation(False, car_limit, log="_messaged_no_distribution")
+main_simulation(True, car_limit)

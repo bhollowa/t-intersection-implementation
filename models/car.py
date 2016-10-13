@@ -121,7 +121,7 @@ class Car:
         """
         self.rotated_image = transform.rotate(self.image, self.direction)
         self.rotated_image = transform.scale(self.rotated_image, (
-            int(self.rotated_image.get_rect().w * 0.1), int(self.rotated_image.get_rect().h * 0.1)))
+            int(self.rotated_image.get_rect().w * 0.05), int(self.rotated_image.get_rect().h * 0.05)))
         self.screen_car = self.rotated_image.get_rect()
         self.screen_car.center = self.get_position()
 
@@ -243,7 +243,7 @@ class Car:
         self.image = image.load(images_directory + "car.png")
         self.rotated_image = transform.rotate(self.image, self.direction)  # image of the car rotated
         self.rotated_image = transform.scale(self.rotated_image, (  # reduction of the size of the image
-            int(self.rotated_image.get_rect().w * 0.1), int(self.rotated_image.get_rect().h * 0.1)))
+            int(self.rotated_image.get_rect().w * 0.05), int(self.rotated_image.get_rect().h * 0.05)))
         self.screen_car = self.rotated_image.get_rect()  # rectangle representation of the car
         self.screen_car.center = self.get_position()  # add the position to the rectangle
 
@@ -435,6 +435,13 @@ class Car:
         :return: Creation time of the car.
         """
         return self.creation_time
+
+    def get_following_car_name(self):
+        """
+        Returns the name of the car that this car is following. If the name is -1, this car is not following another.
+        :return: <int> name of the car that this one is following
+        """
+        return self.get_following_car_message().car_name
 
     def is_supervisor(self):
         """
