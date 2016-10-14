@@ -65,6 +65,13 @@ def check_close_application(user_input):
     return True
 
 
+def continue_simulation(user_input):
+    for event in user_input:
+        if hasattr(event, 'key'):
+            return False
+    return True
+
+
 def random_car(name, min_speed, max_speed, **kwargs):
     """
     Generates a random car with the given name. The max speed is used to give an speed not giver than the maximum a the
