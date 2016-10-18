@@ -38,11 +38,9 @@ class Car:
             self.creation_time = creation_time
         self.left_intersection_time = left_intersection_time
         self.controller = controller
-        self.lane = lane
         self.name = name
-        self.pos_x = pos_x
-        self.pos_y = pos_y
-        self.direction = direction
+        self.initial_coordinates = (pos_x, pos_y, direction, lane)
+        self.actual_coordinates = (pos_x, pos_y, direction, lane)
         self.absolute_speed = absolute_speed
         self.image = None
         self.rotated_image = None
@@ -95,9 +93,13 @@ class Car:
         :param time_unit: unit of time in which the car will move (seconds = 1000).
         :return: None
         """
-        rad = self.direction * pi / 180
-        self.pos_x += -sin(rad) * self.absolute_speed * quantity * time_unit / self.SECONDS
-        self.pos_y += -cos(rad) * self.absolute_speed * quantity * time_unit / self.SECONDS
+        rad = self.get_direction() * pi / 180
+        pos_x = self.get_x_position()
+        pos_y = self.get_y_position()
+        pos_x += -sin(rad) * self.get_speed() * quantity * time_unit / self.SECONDS
+        pos_y += -cos(rad) * self.get_speed() * quantity * time_unit / self.SECONDS
+        self.set_x_position(pos_x)
+        self.set_y_position(pos_y)
 
     def accelerate(self, quantity, time_unit):
         """
@@ -119,7 +121,7 @@ class Car:
         """
         Prepares the image of the car to be drawn. The image is rotated, re-escalated and moved.
         """
-        self.rotated_image = transform.rotate(self.image, self.direction)
+        self.rotated_image = transform.rotate(self.image, self.get_direction())
         self.rotated_image = transform.scale(self.rotated_image, (
             int(self.rotated_image.get_rect().w * 0.05), int(self.rotated_image.get_rect().h * 0.05)))
         self.screen_car = self.rotated_image.get_rect()
@@ -133,7 +135,7 @@ class Car:
         :param direction_change: amount to change the direction
         """
         self.accelerate(1000.0/120.0*speed_change, 1)
-        self.direction += direction_change
+        self.set_direction(self.get_direction()+direction_change)
         self.move(1000.0/120.0, 50)
         self.send_message()
         self.draw_car()
@@ -158,11 +160,14 @@ class Car:
          of the car. Only works if the car is perpendicular to one of those lines.
         :return: distance to the perpendicular line to the direction of the car at the center of the screen.
         """
-        x = 1 if self.pos_x % 384 == 0 else 0
-        y = 1 if self.pos_y % 384 == 0 else 0
-        sign = cos(self.direction * pi / 180) * (self.pos_y - 384) / abs(self.pos_y - 384 + y) + sin(
-            self.direction * pi / 180) * (self.pos_x - 384) / abs(self.pos_x - 384 + x)
-        return sign*sqrt(pow(self.pos_x - 384, 2) + pow(self.pos_y - 384, 2))
+        pos_x = self.get_x_position()
+        pos_y = self.get_y_position()
+        direction = self.get_direction()
+        x = 1 if pos_x % 384 == 0 else 0
+        y = 1 if pos_y % 384 == 0 else 0
+        sign = cos(direction * pi / 180) * (pos_y - 384) / abs(pos_y - 384 + y) + sin(
+            direction * pi / 180) * (pos_x - 384) / abs(pos_x - 384 + x)
+        return sign*sqrt(pow(pos_x - 384, 2) + pow(pos_y - 384, 2))
 
     def send_message(self):
         """
@@ -241,7 +246,7 @@ class Car:
         Creates the image representation of a car, with his rotated image and his screen representation (with the rect).
         """
         self.image = image.load(images_directory + "car.png")
-        self.rotated_image = transform.rotate(self.image, self.direction)  # image of the car rotated
+        self.rotated_image = transform.rotate(self.image, self.get_direction())  # image of the car rotated
         self.rotated_image = transform.scale(self.rotated_image, (  # reduction of the size of the image
             int(self.rotated_image.get_rect().w * 0.05), int(self.rotated_image.get_rect().h * 0.05)))
         self.screen_car = self.rotated_image.get_rect()  # rectangle representation of the car
@@ -294,6 +299,20 @@ class Car:
                 following_car_message.set_type("not_following")
                 self.supervisor_result_messages.append(following_car_message)
 
+    def get_x_position(self):
+        return self.actual_coordinates[0]
+
+    def get_y_position(self):
+        return self.actual_coordinates[1]
+
+    def set_x_position(self, new_x):
+        self.actual_coordinates = (
+            new_x, self.actual_coordinates[1], self.actual_coordinates[2], self.actual_coordinates[3])
+
+    def set_y_position(self, new_y):
+        self.actual_coordinates = (
+            self.actual_coordinates[0], new_y, self.actual_coordinates[2], self.actual_coordinates[3])
+
     def get_supervisor_result_messages(self):
         """
         Returns the list of result messages of the supervisor level.
@@ -313,7 +332,7 @@ class Car:
         Returns the actual position of the car.
         :return: Position of the car
         """
-        return self.pos_x, self.pos_y
+        return self.get_x_position(), self.get_y_position()
 
     def set_position(self, position):
         """
@@ -342,7 +361,15 @@ class Car:
         Returns the direction of the car. It is in radians.
         :return: direction value of the car in radians.
         """
-        return self.direction
+        return self.actual_coordinates[2]
+
+    def set_direction(self, new_direction):
+        """
+        Sets the new direction of a car.
+        :param new_direction: new direction of a car.
+        """
+        self.actual_coordinates = (
+            self.actual_coordinates[0], self.actual_coordinates[1], new_direction, self.actual_coordinates[3])
 
     def set_speed(self, new_speed):
         """
@@ -385,7 +412,15 @@ class Car:
         Return the lane in which the cart started
         :return: int of lane
         """
-        return self.lane
+        return self.actual_coordinates[3]
+
+    def set_lane(self, new_lane):
+        """
+        Sets the lane of a car.
+        :param new_lane: new lane of a car.
+        """
+        self.actual_coordinates = (
+            self.actual_coordinates[0], self.actual_coordinates[1], self.actual_coordinates[2], new_lane)
 
     def set_left_intersection_time(self):
         """
