@@ -307,11 +307,11 @@ class Car:
 
     def set_x_position(self, new_x):
         self.actual_coordinates = (
-            new_x, self.actual_coordinates[1], self.actual_coordinates[2], self.actual_coordinates[3])
+            new_x, self.get_y_position(), self.get_direction(), self.get_lane())
 
     def set_y_position(self, new_y):
         self.actual_coordinates = (
-            self.actual_coordinates[0], new_y, self.actual_coordinates[2], self.actual_coordinates[3])
+            self.get_x_position(), new_y, self.get_direction(), self.get_lane())
 
     def get_supervisor_result_messages(self):
         """
@@ -339,8 +339,7 @@ class Car:
         Set the position of the car.
         :param position: tuple with the position of the car. tuple must have the form (x, y)
         """
-        self.pos_x = position[0]
-        self.pos_y = position[1]
+        self.actual_coordinates = (position[0], position[1], self.get_direction(), self.get_lane())
 
     def get_rect(self):
         """
@@ -369,7 +368,7 @@ class Car:
         :param new_direction: new direction of a car.
         """
         self.actual_coordinates = (
-            self.actual_coordinates[0], self.actual_coordinates[1], new_direction, self.actual_coordinates[3])
+            self.get_x_position(), self.get_y_position(), new_direction, self.get_lane())
 
     def set_speed(self, new_speed):
         """
