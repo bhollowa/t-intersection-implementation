@@ -109,7 +109,8 @@ class Car:
         :param time_unit: unit of ti- 5me in which the car will accelerate (seconds = 1000).
         :return: None
         """
-        new_speed = self.absolute_speed + self.acceleration_rate * quantity * time_unit / self.SECONDS
+        speed_diff = self.acceleration_rate * quantity * time_unit / self.SECONDS
+        new_speed = self.absolute_speed + speed_diff
         if new_speed > self.max_forward_speed:
             self.absolute_speed = self.max_forward_speed
         elif new_speed < 0:
@@ -569,3 +570,25 @@ class Car:
                 old_cars_messages.append(car_message)
         old_cars_messages.sort(key=lambda x: x.creation_time, reverse=False)
         return new_cars_messages, old_cars_messages
+
+    def get_car_length(self):
+        """
+        Get the length of the car based on it's screen representation.
+        :return: <int> length of a car.
+        """
+        return abs((self.get_rect().right - self.get_rect().left) * sin(self.get_direction() * pi / 180) + (
+        self.get_rect().top - self.get_rect().bottom) * cos(self.get_direction() * pi / 180))
+
+    def get_actual_coordinates(self):
+        """
+        Return the tuple containing the actual coordinates fo a car.
+        :return: (<int>, <int>, <int>, <int>) actual coordinates of a car.
+        """
+        return self.actual_coordinates
+
+    def get_origin_coordinates(self):
+        """
+        Return the tuple containing the origin coordinates fo a car.
+        :return: (<int>, <int>, <int>, <int>) origin coordinates of a car.
+        """
+        return self.initial_coordinates

@@ -122,7 +122,7 @@ def display_info_on_car(car, display, letter, *args):
     if "name" in args:
         display.blit(letter.render(str(car.name), True, black), (x, y))
     if "speed" in args:
-        display.blit(letter.render(str(car.get_speed()), True, black), (x - 30, y))
+        display.blit(letter.render(str(car.get_speed()), True, black), (x, y - 30))
     if "following" in args and car.get_following_car_message() is not None:
         display.blit(letter.render(str(car.get_following_car_message().car_name), True, black), (x + 30, y))
 
@@ -258,7 +258,7 @@ def show_caravan(cars, screen, letter, collided_cars, screen_width):
 
     virtual_cars = []
     for i in range(len(leaders)):
-        virtual_cars.append((leaders[i], pygame.Rect((screen_width, 600 * (i + 1) / len(leaders)), size)))
+        virtual_cars.append((leaders[i], pygame.Rect((screen_width - 100, 600 * (i + 1) / len(leaders)), size)))
     for i in range(len(not_leaders)):
         for car in virtual_cars:
             if car[0].get_name() == not_leaders[i].get_following_car_name():

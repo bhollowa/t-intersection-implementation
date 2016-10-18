@@ -10,15 +10,18 @@ def follower_controller(car):
     :param car: car to bre controlled
     :return: new inputs of the car.
     """
-    headway = 200
+    headway = car.get_car_length() * 3 + 0.5 * car.get_speed()
     if not car.is_following():
         car.set_controller(default_controller)
     car_message = car.get_following_car_message()
     if car_message is not None:
-        if car.distance_to_center() - car_message.distance_to_center() < headway:
-            car.set_speed(car_message.speed - 10)
-            return -2, 0
-        elif car.distance_to_center() - car_message.distance_to_center() < headway*3/2:
-            car.set_speed(car_message.speed)
-            return -1, 0
-    return 1, 0
+        distance_difference = car_message.virtual_distance() - car.virtual_distance()
+        if distance_difference < car.get_car_length():
+            car.set_speed(0)
+        if distance_difference < headway:
+            # car.set_speed(car_message.speed - 10)
+            return -20, 0
+        elif distance_difference < headway*3/2:
+            # car.set_speed(car_message.speed)
+            return 10, 0
+    return 15, 0

@@ -54,7 +54,7 @@ def main_simulation(graphic_environment, limit, *args, **kwargs):
     collision_wait = False
     display_time_counter = 0
     lanes_waiting_time = [(0, 0), (0, 0), (0, 0), (0, 0)]
-    rate = 0.8
+    rate = 0.5
     for i in range(len(lanes_waiting_time)):
         lane = lanes_waiting_time[i]
         lanes_waiting_time[i] = (np.random.exponential(1.0/rate), lane[1])
@@ -68,10 +68,10 @@ def main_simulation(graphic_environment, limit, *args, **kwargs):
             for i in range(len(lanes_waiting_time)):
                 lanes_waiting_time[i] = (lanes_waiting_time[i][0], lanes_waiting_time[i][1] + 1)
                 if lanes_waiting_time[i][0] <= lanes_waiting_time[i][1]/60.0:
-                    lanes_waiting_time[i] = (np.random.exponential(1.0/rate), 0)
                     new_car = random_car(car_name_counter, min_speed, max_speed, last_lane=last_lane)
                     new_car.new_image()
                     if not new_car.collide(cars):
+                        lanes_waiting_time[i] = (np.random.exponential(1.0 / rate), 0)
                         cars.append(new_car)
                         car_name_counter += 1
                     else:
@@ -85,6 +85,8 @@ def main_simulation(graphic_environment, limit, *args, **kwargs):
                 new_cars, old_cars = separate_new_and_old_cars(cars)
                 supervisor_level(new_cars, old_cars, attack_supervisory)
             for car in cars:
+                if car.virtual_distance() < 0:
+                    print car.virtual_distance(), car.get_lane()
                 if not supervisor(cars) and car.is_new() and distributed:  # TODO: change name of supervisor function and move it to car class
                     car.set_active_supervisory_level()
                 if car.is_supervisor() and distributed:
@@ -113,7 +115,7 @@ def main_simulation(graphic_environment, limit, *args, **kwargs):
                 car.update(*car.controller(car))
                 if graphic_environment:
                     screen.blit(car.rotated_image, car.screen_car)
-                    display_info_on_car(car, screen, font, "name", "following")
+                    display_info_on_car(car, screen, font, "name", "following", "speed")
             collided_cars, collide = colliding_cars(cars)
             if collide and collided_cars[0].screen_car.colliderect(intersection):
                 code = str(collided_cars[0].get_name()) + "to" + str(

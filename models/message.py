@@ -14,20 +14,18 @@ class Message:
         :param car: car to create the message from.
         """
         if car is not None:
-            self.pos_x, self.pos_y = car.get_position()
-            self.direction = car.get_direction()
+            self.actual_coordinates = car.get_actual_coordinates()
+            self.origin_coordinates = car.get_origin_coordinates()
             self.speed = car.get_speed()
             self.car_name = car.get_name()
             self.lane = car.get_lane()
             self.creation_time = car.get_creation_time()
             self.new = car.is_new()
         else:
+            self.actual_coordinates = (384, 384, 0, 1)
+            self.origin_coordinates = (384, 384, 0, 1)
             self.car_name = -1
-            self.pos_x = 384
-            self.pos_y = 384
-            self.direction = 0
             self.speed = 10
-            self.lane = 1
             self.creation_time = time()
             self.new = True
         self.receiver = None
@@ -36,6 +34,15 @@ class Message:
         self.car = None
         self.follow = False
 
+    def virtual_distance(self):
+        """
+        Gets the virtual position of the car.
+        :return: <int> virtual position of the car
+        """
+        x_distance = (self.get_origin_x_position() - self.get_x_position()) * sin(self.get_direction() * pi / 180)
+        y_distance = (self.get_origin_y_position() - self.get_y_position()) * cos(self.get_direction() * pi / 180)
+        return x_distance + y_distance
+
     def distance_to_center(self):
         """
         Returns the distance of the car who created the message to the perpendicular line to the center of the screen
@@ -43,10 +50,12 @@ class Message:
         :return: distance to the perpendicular line to the direction of the car who created the message at the center of
          the screen.
         """
-        x = 1 if self.pos_x % 384 == 0 else 0
-        y = 1 if self.pos_y % 384 == 0 else 0
-        sign = cos(self.direction * pi / 180)*(self.pos_y - 384)/abs(self.pos_y - 384 + y) + sin(self.direction * pi / 180)*(self.pos_x - 384)/abs(self.pos_x - 384 + x)
-        return sign*sqrt(pow(self.pos_x - 384,2) + pow(self.pos_y - 384, 2))
+        x = 1 if self.get_x_position() % 384 == 0 else 0
+        y = 1 if self.get_y_position() % 384 == 0 else 0
+        sign = cos(self.get_direction() * pi / 180) * (self.get_y_position() - 384) / abs(
+            self.get_y_position() - 384 + y) + sin(self.get_direction() * pi / 180) * (
+        self.get_x_position() - 384) / abs(self.get_x_position() - 384 + x)
+        return sign*sqrt(pow(self.get_x_position() - 384,2) + pow(self.get_y_position() - 384, 2))
 
     def is_new(self):
         """
@@ -137,3 +146,38 @@ class Message:
 
     def get_follow(self):
         return self.follow
+
+    def get_origin_x_position(self):
+        """
+        Get the origin x position of the car who created this message
+        :return:  <int> x position.
+        """
+        return self.origin_coordinates[0]
+
+    def get_origin_y_position(self):
+        """
+        Get the origin y position of the car who created this message
+        :return:  <int> y position.
+        """
+        return self.origin_coordinates[1]
+
+    def get_x_position(self):
+        """
+        Get the x position of the car who created this message
+        :return:  <int> x position.
+        """
+        return self.actual_coordinates[0]
+
+    def get_y_position(self):
+        """
+        Get the y position of the car who created this message
+        :return:  <int> y position.
+        """
+        return self.actual_coordinates[1]
+
+    def get_direction(self):
+        """
+        Get the direction position of the car who created this message
+        :return:  <int> direction position.
+        """
+        return self.actual_coordinates[2]
