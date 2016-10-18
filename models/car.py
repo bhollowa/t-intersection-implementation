@@ -154,6 +154,15 @@ class Car:
         else:
             return True
 
+    def virtual_distance(self):
+        """
+        Gets the virtual position of the car.
+        :return: <int> virtual position of the car
+        """
+        x_distance = (self.get_origin_x_position() - self.get_x_position()) * sin(self.get_direction() * pi / 180)
+        y_distance = (self.get_origin_y_position() - self.get_y_position()) * cos(self.get_direction() * pi / 180)
+        return x_distance + y_distance
+
     def distance_to_center(self):
         """
         Returns the distance of the car to the perpendicular line to the center of the screen depending of the direction
@@ -298,6 +307,34 @@ class Car:
                 following_car_message.set_receiver(new_car_message.get_name())
                 following_car_message.set_type("not_following")
                 self.supervisor_result_messages.append(following_car_message)
+
+    def get_origin_x_position(self):
+        """
+        Return the x position of the origin coordinates of a car.
+        :return: <int> origin x.
+        """
+        return self.initial_coordinates[0]
+
+    def get_origin_y_position(self):
+        """
+        Return the y position of the origin coordinates of a car.
+        :return: <int> origin y.
+        """
+        return self.initial_coordinates[1]
+
+    def get_origin_direction(self):
+        """
+        Return the direction of the origin coordinates of a car.
+        :return: <int> origin direction.
+        """
+        return self.initial_coordinates[2]
+
+    def get_origin_lane(self):
+        """
+        Return the lane of the origin coordinates of a car.
+        :return: <int> origin lane.
+        """
+        return self.initial_coordinates[3]
 
     def get_x_position(self):
         return self.actual_coordinates[0]
