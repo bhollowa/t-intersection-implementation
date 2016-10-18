@@ -228,3 +228,59 @@ def supervisor(car_list):
         if car.is_supervisor():
             return True
     return False
+
+
+def show_caravan(cars, screen, letter, collided_cars, screen_width):
+    """
+    Function to show the virtual caravan in the graphic simulation.
+    :param cars: Cars at the intersection
+    :param screen: screen to draw the caravan.
+    :param letter: font to write information
+    :param collided_cars: information of the collided cars. None if there is no collision present.
+    :param screen_width: width of the screen.
+    """
+    size = (50, 50)
+    leaders = []
+    not_leaders = []
+    car_surface = pygame.Surface((50, 50))
+    palette = [(0, 126, 255, 0), (255, 0, 0, 0), (0, 255, 0, 0)]
+    car_surface.fill(palette[0])
+    collided_car_surface = pygame.Surface((50, 50))
+    collided_car_surface.fill(palette[1])
+    leader_car_surface = pygame.Surface((50, 50))
+    leader_car_surface.fill(palette[2])
+
+    for car in cars:
+        if not car.get_following_car_name() in [cars[k].get_name() for k in range(len(cars))]:
+            leaders.append(car)
+        else:
+            not_leaders.append(car)
+
+    virtual_cars = []
+    for i in range(len(leaders)):
+        virtual_cars.append((leaders[i], pygame.Rect((screen_width, 600 * (i + 1) / len(leaders)), size)))
+    for i in range(len(not_leaders)):
+        for car in virtual_cars:
+            if car[0].get_name() == not_leaders[i].get_following_car_name():
+                new_rect = pygame.Rect((car[1].left - 100, car[1].top), size)
+                for virtual_car in virtual_cars:
+                    if new_rect.colliderect(virtual_car[1]):
+                        new_rect.top += 50
+                        virtual_car[1].top -= 50
+                virtual_cars.append((not_leaders[i], new_rect))
+                break
+
+    for car in virtual_cars:
+        if collided_cars is not None:
+            if car[0].get_name() == collided_cars[0].get_name() or car[0].get_name() == collided_cars[1].get_name():
+                screen.blit(collided_car_surface, car[1])
+            elif car[0].is_supervisor():
+                screen.blit(leader_car_surface, car[1])
+            else:
+                screen.blit(car_surface, car[1])
+        else:
+            if car[0].is_supervisor():
+                screen.blit(leader_car_surface, car[1])
+            else:
+                screen.blit(car_surface, car[1])
+        screen.blit(letter.render(str(car[0].get_name()), True, black), car[1].topleft)

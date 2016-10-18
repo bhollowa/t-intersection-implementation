@@ -1,7 +1,7 @@
 import os
 import pygame
 from auxiliary_functions.auxiliary_functions import check_close_application, random_car, colliding_cars, \
-    display_info_on_car, create_logs, supervisor, separate_new_and_old_cars, continue_simulation
+    display_info_on_car, create_logs, supervisor, separate_new_and_old_cars, continue_simulation, show_caravan
 from car_controllers.supervisor_level import supervisor_level
 import threading
 from datetime import datetime
@@ -10,62 +10,13 @@ from math import exp
 import sys
 import numpy as np
 
-def show_caravan(cars, screen, letter, collided_cars):
-    black = (0, 0, 0)
-    white = (255, 255, 255)
-    size = (50, 50)
-    leaders = []
-    not_leaders = []
-    car_surface = pygame.Surface((50, 50))
-    palette = [(0, 126, 255, 0), (255, 0, 0, 0), (0, 255, 0, 0)]
-    car_surface.fill(palette[0])
-    collided_car_surface = pygame.Surface((50, 50))
-    collided_car_surface.fill(palette[1])
-    leader_car_surface = pygame.Surface((50, 50))
-    leader_car_surface.fill(palette[2])
-
-    for car in cars:
-        if not car.get_following_car_name() in [cars[k].get_name() for k in range(len(cars))]:
-            leaders.append(car)
-        else:
-            not_leaders.append(car)
-
-    virtual_cars = []
-    for i in range(len(leaders)):
-        virtual_cars.append((leaders[i], pygame.Rect((1700, 600 * (i + 1) / len(leaders)), size)))
-    for i in range(len(not_leaders)):
-        for car in virtual_cars:
-            if car[0].get_name() == not_leaders[i].get_following_car_name():
-                new_rect = pygame.Rect((car[1].left - 100, car[1].top), size)
-                for virtual_car in virtual_cars:
-                    if new_rect.colliderect(virtual_car[1]):
-                        new_rect.top += 50
-                        virtual_car[1].top -= 50
-                virtual_cars.append((not_leaders[i], new_rect))
-                break
-
-    for car in virtual_cars:
-        if collided_cars is not None:
-            if car[0].get_name() == collided_cars[0].get_name() or car[0].get_name() == collided_cars[1].get_name():
-                screen.blit(collided_car_surface, car[1])
-            elif car[0].is_supervisor():
-                screen.blit(leader_car_surface, car[1])
-            else:
-                screen.blit(car_surface, car[1])
-        else:
-            if car[0].is_supervisor():
-                screen.blit(leader_car_surface, car[1])
-            else:
-                screen.blit(car_surface, car[1])
-        screen.blit(letter.render(str(car[0].get_name()), True, black), car[1].topleft)
-
 
 def main_simulation(graphic_environment, limit, *args, **kwargs):
     attack_supervisory = "attack_supervisory" in args
     wait = "wait" in args
-    no_same_lane = "no_same_line" in args
     distributed = "distributed" in args
     log = "log" in kwargs
+    show_virtual_caravan = "show_caravan" in args
     images_directory = os.path.dirname(os.path.abspath(__file__)) + "/images/"
     if log:
         collision_log, left_intersection_log, total_cars_log = create_logs(kwargs["log"])
@@ -79,7 +30,10 @@ def main_simulation(graphic_environment, limit, *args, **kwargs):
 
     if graphic_environment:
         fps = 60
-        screen = pygame.display.set_mode((1768, 768))
+        screen_width = 768
+        if show_virtual_caravan:
+            screen_width = 1468
+        screen = pygame.display.set_mode((screen_width, 768))
         intersection_bg = pygame.image.load(images_directory + "background.jpg")
         background = pygame.Surface(screen.get_size())
         background = background.convert()
@@ -195,7 +149,7 @@ def main_simulation(graphic_environment, limit, *args, **kwargs):
                     log_message = log_message[:len(log_message)-1] + ']'
                     left_intersection_log.info(log_message)
             if graphic_environment:
-                show_caravan(cars, screen, font, collided_cars)
+                show_caravan(cars, screen, font, collided_cars, screen_width)
                 pygame.display.update(screen.get_rect())
                 clock.tick(fps)
             if display_time_counter / 60 == 1:
@@ -231,4 +185,4 @@ def print_percentages(times_tuple):
 # threading.Thread(target=main_simulation, args=(False, car_limit, "distributed")).start()
 # threading.Thread(target=main_simulation, args=(False, car_limit, "distributed")).start()
 car_limit = 1000000
-main_simulation(True, car_limit, "distributed", "wait")
+main_simulation(True, car_limit, "distributed", "wait", "show_caravan")
