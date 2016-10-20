@@ -4,6 +4,7 @@ from models.car import Car
 from random import randint
 import logging
 import os
+from car_controllers.follower_controller import follower_controller
 
 white = (255, 255, 255)  # RGB white color representation
 black = (0, 0, 0)  # RGB black color representation
@@ -124,7 +125,7 @@ def display_info_on_car(car, display, letter, *args):
     if "speed" in args:
         display.blit(letter.render(str(car.get_speed()), True, black), (x, y - 30))
     if "following" in args and car.get_following_car_message() is not None:
-        display.blit(letter.render(str(car.get_following_car_message().car_name), True, black), (x + 30, y))
+        display.blit(letter.render(str(car.get_following_car_message().car_name), True, black), (x, y - 30))
 
 
 def random_cars_from_lanes(lanes, name, max_speed):
@@ -243,12 +244,16 @@ def show_caravan(cars, screen, letter, collided_cars, screen_width):
     leaders = []
     not_leaders = []
     car_surface = pygame.Surface((50, 50))
-    palette = [(0, 126, 255, 0), (255, 0, 0, 0), (0, 255, 0, 0)]
+    palette = [(0, 126, 255, 0), (255, 0, 0, 0), (0, 255, 0, 0), (255, 126, 0, 0), (255, 0, 126, 0)]
     car_surface.fill(palette[0])
     collided_car_surface = pygame.Surface((50, 50))
     collided_car_surface.fill(palette[1])
     leader_car_surface = pygame.Surface((50, 50))
     leader_car_surface.fill(palette[2])
+    default_controller_surface = pygame.Surface((10, 10))
+    default_controller_surface.fill(palette[3])
+    follower_controller_surface = pygame.Surface((10, 10))
+    follower_controller_surface.fill(palette[4])
 
     for car in cars:
         if not car.get_following_car_name() in [cars[k].get_name() for k in range(len(cars))]:
@@ -258,7 +263,7 @@ def show_caravan(cars, screen, letter, collided_cars, screen_width):
 
     virtual_cars = []
     for i in range(len(leaders)):
-        virtual_cars.append((leaders[i], pygame.Rect((screen_width - 100, 600 * (i + 1) / len(leaders)), size)))
+        virtual_cars.append((leaders[i], pygame.Rect((screen_width - 100, 700 * (i + 1) / (len(leaders) + 1)), size)))
     for i in range(len(not_leaders)):
         for car in virtual_cars:
             if car[0].get_name() == not_leaders[i].get_following_car_name():
@@ -283,4 +288,8 @@ def show_caravan(cars, screen, letter, collided_cars, screen_width):
                 screen.blit(leader_car_surface, car[1])
             else:
                 screen.blit(car_surface, car[1])
+        if car[0].get_controller() == follower_controller:
+            screen.blit(follower_controller_surface, car[1])
+        else:
+            screen.blit(default_controller_surface, car[1])
         screen.blit(letter.render(str(car[0].get_name()), True, black), car[1].topleft)
