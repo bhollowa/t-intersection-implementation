@@ -16,6 +16,7 @@ class Message:
         if car is not None:
             self.actual_coordinates = car.get_actual_coordinates()
             self.origin_coordinates = car.get_origin_coordinates()
+            self.acceleration = car.get_acceleration()
             self.speed = car.get_speed()
             self.car_name = car.get_name()
             self.lane = car.get_lane()
@@ -24,6 +25,7 @@ class Message:
         else:
             self.actual_coordinates = (384, 384, 0, 1)
             self.origin_coordinates = (384, 384, 0, 1)
+            self.acceleration = 3
             self.car_name = -1
             self.speed = 10
             self.creation_time = time()
@@ -181,3 +183,10 @@ class Message:
         :return:  <int> direction position.
         """
         return self.actual_coordinates[2]
+
+    def get_acceleration(self):
+        """
+        Get the acceleration of the car that created this message
+        :return: <int> Acceleration of the car
+        """
+        return self.acceleration
