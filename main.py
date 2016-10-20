@@ -67,7 +67,7 @@ def main_simulation(graphic_environment, limit, *args, **kwargs):
             for i in range(len(lanes_waiting_time)):
                 lanes_waiting_time[i] = (lanes_waiting_time[i][0], lanes_waiting_time[i][1] + 1)
                 if lanes_waiting_time[i][0] <= lanes_waiting_time[i][1]/60.0:
-                    new_car = random_car(car_name_counter, min_speed, max_speed, last_lane=last_lane)
+                    new_car = random_car(car_name_counter, min_speed, max_speed, lane=i)
                     new_car.new_image()
                     if not new_car.collide(cars):
                         lanes_waiting_time[i] = (np.random.exponential(1.0 / rate), 0)
