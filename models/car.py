@@ -14,10 +14,13 @@ class Car:
     of movement, the total movement will be escalated into x and y with the direction.
     Also, the car has a fixed acceleration and maximum speed.
     """
-    SECONDS = 1000.0
-    max_forward_speed = 20.0  # meters/10*seconds.
+    TIME_STEP = 0.3
+    max_forward_speed = 20.0  # meters/seconds.
     acceleration_rate = 3.0  # meters/seconds*seconds.
     following_car_message = Message()
+    image_scale_rate = 0.05
+    maximum_acceleration = 4.2
+    minimum_acceleration = -5.0
 
     def __init__(self, name, pos_x=0.0, pos_y=0.0, absolute_speed=0.0, direction=0, lane=1,
                  controller=default_controller.default_controller, creation_time=None, left_intersection_time=None):
@@ -52,6 +55,9 @@ class Car:
         self.new_car = True
         self.supervisor_messages = []
         self.supervisor_result_messages = []
+        self.control_law_value = 0
+        self.last_virtual_distance = 0
+        self.lane = lane
 
     def __str__(self):
         """
@@ -85,32 +91,28 @@ class Car:
         return_string += '}'
         return return_string
 
-    def move(self, quantity, time_unit):
+    def move(self):
         """
         Function to move a car. If its speed its 0, it'll not move. Time unit is necessary to work in milliseconds.
         Seconds = 1000.
-        :param quantity: how many unit of times the car must move.
-        :param time_unit: unit of time in which the car will move (seconds = 1000).
-        :return: None
         """
         rad = self.get_direction() * pi / 180
         pos_x = self.get_x_position()
         pos_y = self.get_y_position()
-        pos_x += -sin(rad) * self.get_speed() * quantity * time_unit / self.SECONDS
-        pos_y += -cos(rad) * self.get_speed() * quantity * time_unit / self.SECONDS
-        self.set_x_position(pos_x)
-        self.set_y_position(pos_y)
+        pos_x_diff = -sin(rad) * self.get_speed() * self.TIME_STEP
+        pos_y_diff = -cos(rad) * self.get_speed() * self.TIME_STEP
+        self.set_x_position(pos_x + pos_x_diff)
+        self.set_y_position(pos_y + pos_y_diff)
 
-    def accelerate(self, quantity, time_unit):
+    def accelerate(self):
         """
         Function to accelerate a car. Exception raised if maximum speed is reached or surpassed. Time unit is necessary
          to work in milliseconds. Seconds = 1000.
-        :param quantity: how many unit of times the car must accelerate.
-        :param time_unit: unit of ti- 5me in which the car will accelerate (seconds = 1000).
         :return: None
         """
-        speed_diff = self.acceleration_rate * quantity * time_unit / self.SECONDS
+        speed_diff = self.acceleration_rate * self.TIME_STEP
         new_speed = self.absolute_speed + speed_diff
+
         if new_speed > self.max_forward_speed:
             self.absolute_speed = self.max_forward_speed
         elif new_speed < 0:
@@ -124,20 +126,19 @@ class Car:
         """
         self.rotated_image = transform.rotate(self.image, self.get_direction())
         self.rotated_image = transform.scale(self.rotated_image, (
-            int(self.rotated_image.get_rect().w * 0.05), int(self.rotated_image.get_rect().h * 0.05)))
+            int(self.rotated_image.get_rect().w * self.get_image_scale_rate()),
+            int(self.rotated_image.get_rect().h * self.get_image_scale_rate())))
         self.screen_car = self.rotated_image.get_rect()
         self.screen_car.center = self.get_position()
 
-    def update(self, speed_change, direction_change):
+    def update(self):
         """
         Updates the speed, position and images of the car. Receives inputs as if a user were playing with the car
         with the keyboards arrows.
-        :param speed_change: amount to change the speed og the car
-        :param direction_change: amount to change the direction
         """
-        self.accelerate(1000.0/120.0*speed_change, 1)
-        self.set_direction(self.get_direction()+direction_change)
-        self.move(1000.0/120.0, 50)
+        self.accelerate()
+        self.get_controller()(self)
+        self.move()
         self.send_message()
         self.draw_car()
 
@@ -163,21 +164,6 @@ class Car:
         x_distance = (self.get_origin_x_position() - self.get_x_position()) * sin(self.get_direction() * pi / 180)
         y_distance = (self.get_origin_y_position() - self.get_y_position()) * cos(self.get_direction() * pi / 180)
         return x_distance + y_distance
-
-    def distance_to_center(self):
-        """
-        Returns the distance of the car to the perpendicular line to the center of the screen depending of the direction
-         of the car. Only works if the car is perpendicular to one of those lines.
-        :return: distance to the perpendicular line to the direction of the car at the center of the screen.
-        """
-        pos_x = self.get_x_position()
-        pos_y = self.get_y_position()
-        direction = self.get_direction()
-        x = 1 if pos_x % 384 == 0 else 0
-        y = 1 if pos_y % 384 == 0 else 0
-        sign = cos(direction * pi / 180) * (pos_y - 384) / abs(pos_y - 384 + y) + sin(
-            direction * pi / 180) * (pos_x - 384) / abs(pos_x - 384 + x)
-        return sign*sqrt(pow(pos_x - 384, 2) + pow(pos_y - 384, 2))
 
     def send_message(self):
         """
@@ -258,7 +244,7 @@ class Car:
         self.image = image.load(images_directory + "car.png")
         self.rotated_image = transform.rotate(self.image, self.get_direction())  # image of the car rotated
         self.rotated_image = transform.scale(self.rotated_image, (  # reduction of the size of the image
-            int(self.rotated_image.get_rect().w * 0.05), int(self.rotated_image.get_rect().h * 0.05)))
+            int(self.rotated_image.get_rect().w * self.get_image_scale_rate()), int(self.rotated_image.get_rect().h * self.get_image_scale_rate())))
         self.screen_car = self.rotated_image.get_rect()  # rectangle representation of the car
         self.screen_car.center = self.get_position()  # add the position to the rectangle
 
@@ -308,6 +294,33 @@ class Car:
                 following_car_message.set_receiver(new_car_message.get_name())
                 following_car_message.set_type("not_following")
                 self.supervisor_result_messages.append(following_car_message)
+
+    def get_acceleration(self):
+        """
+        Gets the actual acceleration of the car
+        :return:  <int> acceleration of the car
+        """
+        return self.acceleration_rate
+
+    def set_acceleration(self, acceleration):
+        """
+        Sets the acceleration at a new value.
+        :param acceleration: new value of the acceleration
+        """
+        new_acceleration = self.acceleration_rate + acceleration
+        if new_acceleration > self.get_maximum_acceleration():
+            self.acceleration_rate = self.get_maximum_acceleration()
+        elif new_acceleration < self.get_minimum_acceleration():
+            self.acceleration_rate = self.get_minimum_acceleration()
+        else:
+            self.acceleration_rate = new_acceleration
+
+    def get_image_scale_rate(self):
+        """
+        Get the rate at which the image is being scales
+        :return: <int> image scale rate
+        """
+        return self.image_scale_rate
 
     def get_origin_x_position(self):
         """
@@ -419,9 +432,15 @@ class Car:
         """
         Set the controller of the car.
         :param controller: new controller of the car.
-        :return:
         """
         self.controller = controller
+
+    def get_controller(self):
+        """
+        Get the controller of the car.
+        :return: controller of the car
+        """
+        return self.controller
 
     def set_following_car_message(self, message):
         """
@@ -592,3 +611,45 @@ class Car:
         :return: (<int>, <int>, <int>, <int>) origin coordinates of a car.
         """
         return self.initial_coordinates
+
+    def get_control_law_value(self):
+        """
+        Returns the last value of the control law value.
+        :return: <int> control law value
+        """
+        return self.control_law_value
+
+    def set_control_law_value(self, new_control_law):
+        """
+        Sets the value of the control law value
+        :param new_control_law: <int> new value of control law value
+        """
+        self.control_law_value = new_control_law
+
+    def get_last_virtual_distance(self):
+        """
+        Gets the value of the last virtual distance recorded
+        :return: <float> last virtual distance
+        """
+        return self.last_virtual_distance
+
+    def set_last_virtual_distance(self, new_virtual_distance):
+        """
+        Sets the last virtual distance
+        :param new_virtual_distance: <float> new value of the last virtual distance
+        """
+        self.last_virtual_distance = new_virtual_distance
+
+    def get_maximum_acceleration(self):
+        """
+        Return the maximum acceleration of a car
+        :return: <float> maximum acceleration
+        """
+        return self.maximum_acceleration
+
+    def get_minimum_acceleration(self):
+        """
+        Return the maximum acceleration of a car
+        :return: <float> maximum acceleration
+        """
+        return self.minimum_acceleration
