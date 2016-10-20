@@ -4,4 +4,4 @@ def default_controller(car):
     :param car: car to be controlled.
     :return: inputs to move the car.
     """
-    return 4, 0
+    car.set_acceleration(3)
