@@ -93,7 +93,13 @@ def random_car(name, min_speed, max_speed, **kwargs):
                 new_lane = (new_lane + 1) % 4
         pos_x, pos_y, direction, lane = initial_positions[new_lane]
     initial_speed = randint(min_speed, max_speed)
-    return Car(str(name), pos_x, pos_y, direction=direction, lane=lane, absolute_speed=initial_speed)
+    intention = "s"
+    random_intention = randint(0,2)
+    if random_intention == 1:
+        intention = "r"
+    elif random_intention == 2:
+        intention = "l"
+    return Car(str(name), pos_x, pos_y, direction=direction, lane=lane, absolute_speed=initial_speed, intention=intention)
 
 
 def colliding_cars(car_list):
