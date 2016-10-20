@@ -23,7 +23,8 @@ class Car:
     minimum_acceleration = -5.0
 
     def __init__(self, name, pos_x=0.0, pos_y=0.0, absolute_speed=0.0, direction=0, lane=1,
-                 controller=default_controller.default_controller, creation_time=None, left_intersection_time=None):
+                 controller=default_controller.default_controller, creation_time=None, left_intersection_time=None,
+                 intention="s"):
         """
         :param name: id to identify the car. Integer
         :param pos_x: x value of the car position.
@@ -58,6 +59,8 @@ class Car:
         self.control_law_value = 0
         self.last_virtual_distance = 0
         self.lane = lane
+        self.intention = intention
+        self.direction_variation = 0
 
     def __str__(self):
         """
@@ -419,6 +422,7 @@ class Car:
         Sets the new direction of a car.
         :param new_direction: new direction of a car.
         """
+        self.direction_variation += abs(new_direction - self.get_direction())
         self.actual_coordinates = (
             self.get_x_position(), self.get_y_position(), new_direction, self.get_lane())
 
@@ -654,3 +658,17 @@ class Car:
         :return: <float> maximum acceleration
         """
         return self.minimum_acceleration
+
+    def get_intention(self):
+        """
+        Return the intention of path of the car. "s" for straightforward, "r" for a right turn, "l" for a left turn.
+        :return: <string> intention of the car
+        """
+        return self.intention
+
+    def get_direction_variation(self):
+        """
+        Returns the total variation of direction of a car
+        :return: <int> direction variation of a car
+        """
+        return self.direction_variation
