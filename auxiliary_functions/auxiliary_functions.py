@@ -240,15 +240,15 @@ def show_caravan(cars, screen, letter, collided_cars, screen_width):
     :param collided_cars: information of the collided cars. None if there is no collision present.
     :param screen_width: width of the screen.
     """
-    size = (50, 50)
+    size = (25, 25)
     leaders = []
     not_leaders = []
-    car_surface = pygame.Surface((50, 50))
+    car_surface = pygame.Surface(size)
     palette = [(0, 126, 255, 0), (255, 0, 0, 0), (0, 255, 0, 0), (255, 126, 0, 0), (255, 0, 126, 0)]
     car_surface.fill(palette[0])
-    collided_car_surface = pygame.Surface((50, 50))
+    collided_car_surface = pygame.Surface(size)
     collided_car_surface.fill(palette[1])
-    leader_car_surface = pygame.Surface((50, 50))
+    leader_car_surface = pygame.Surface(size)
     leader_car_surface.fill(palette[2])
     default_controller_surface = pygame.Surface((10, 10))
     default_controller_surface.fill(palette[3])
