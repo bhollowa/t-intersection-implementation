@@ -27,3 +27,4 @@ def supervisor_level(new_cars, old_cars, attack=False):
                 new_car.set_controller(default_controller)
         else:
             new_car.set_controller(default_controller)
+        old_cars.append(new_car)
