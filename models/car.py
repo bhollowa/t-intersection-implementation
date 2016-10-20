@@ -294,6 +294,7 @@ class Car:
                 following_car_message.set_receiver(new_car_message.get_name())
                 following_car_message.set_type("not_following")
                 self.supervisor_result_messages.append(following_car_message)
+            old_cars_messages.append(new_car_message)
 
     def get_acceleration(self):
         """
