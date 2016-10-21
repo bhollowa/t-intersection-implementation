@@ -1,5 +1,5 @@
 import os
-from math import pi, cos, sin, sqrt, pow
+from math import pi, cos, sin, sqrt, pow, atan
 from pygame import image, transform
 from time import time
 from car_controllers import default_controller, follower_controller
@@ -165,9 +165,53 @@ class Car:
         Gets the virtual position of the car.
         :return: <int> virtual position of the car
         """
-        x_distance = (self.get_origin_x_position() - self.get_x_position()) * sin(self.get_direction() * pi / 180)
-        y_distance = (self.get_origin_y_position() - self.get_y_position()) * cos(self.get_direction() * pi / 180)
-        return x_distance + y_distance
+        virtual_distance_value = 0
+        conflict_zone_radio = 384
+        path_width = 100
+        right_turn_radio = path_width / 4
+        left_turn_radio = 3 * path_width / 4
+        initial_straight_section = conflict_zone_radio - path_width / 2
+        if self.get_intention() is "s":
+            virtual_distance_value = self.get_x_position()
+        elif self.get_intention() is "r":
+            if self.get_virtual_x_position() <= initial_straight_section:  # Calculate real virtual distance
+                virtual_distance_value = self.get_virtual_x_position()
+            elif self.get_virtual_y_position() > -right_turn_radio:
+                virtual_distance_value = initial_straight_section + atan(
+                    (self.get_virtual_x_position() - initial_straight_section) / (
+                        right_turn_radio + self.get_virtual_y_position())) * right_turn_radio
+            else:
+                virtual_distance_value = initial_straight_section + pi * right_turn_radio / 2 - \
+                                         self.get_virtual_y_position() - right_turn_radio
+
+            a = path_width / 2
+            b = right_turn_radio + path_width / 4
+            c = pi * right_turn_radio / 2
+            if virtual_distance_value <= initial_straight_section + c:  # Scale virtual distance
+                virtual_distance_value *= (initial_straight_section + a + b) / (initial_straight_section + c)
+            else:
+                virtual_distance_value += a + b - c
+
+        else:
+            if self.get_virtual_x_position() <= initial_straight_section:  # Calculate real virtual distance
+                virtual_distance_value = self.get_virtual_x_position()
+            elif self.get_virtual_y_position() < left_turn_radio:
+                virtual_distance_value = initial_straight_section + atan(
+                    (self.get_virtual_x_position() - initial_straight_section) / (
+                        left_turn_radio - self.get_virtual_y_position())) * left_turn_radio
+            else:
+                virtual_distance_value = initial_straight_section + pi * left_turn_radio / 2 + \
+                                         self.get_virtual_y_position() - left_turn_radio
+
+            a = path_width / 2
+            b = right_turn_radio + path_width / 4
+            c = pi * left_turn_radio / 2
+            if virtual_distance_value <= initial_straight_section + c:  # Scale virtual distance
+                virtual_distance_value *= (initial_straight_section + a + b) / (initial_straight_section + c)
+            else:
+                virtual_distance_value += a + b - c
+
+        return virtual_distance_value
 
     def send_message(self):
         """
@@ -248,7 +292,8 @@ class Car:
         self.image = image.load(images_directory + "car.png")
         self.rotated_image = transform.rotate(self.image, self.get_direction())  # image of the car rotated
         self.rotated_image = transform.scale(self.rotated_image, (  # reduction of the size of the image
-            int(self.rotated_image.get_rect().w * self.get_image_scale_rate()), int(self.rotated_image.get_rect().h * self.get_image_scale_rate())))
+            int(self.rotated_image.get_rect().w * self.get_image_scale_rate()),
+            int(self.rotated_image.get_rect().h * self.get_image_scale_rate())))
         self.screen_car = self.rotated_image.get_rect()  # rectangle representation of the car
         self.screen_car.center = self.get_position()  # add the position to the rectangle
 
@@ -602,7 +647,7 @@ class Car:
         :return: <int> length of a car.
         """
         return abs((self.get_rect().right - self.get_rect().left) * sin(self.get_direction() * pi / 180) + (
-        self.get_rect().top - self.get_rect().bottom) * cos(self.get_direction() * pi / 180))
+            self.get_rect().top - self.get_rect().bottom) * cos(self.get_direction() * pi / 180))
 
     def get_actual_coordinates(self):
         """
