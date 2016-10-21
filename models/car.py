@@ -14,7 +14,8 @@ class Car:
     of movement, the total movement will be escalated into x and y with the direction.
     Also, the car has a fixed acceleration and maximum speed.
     """
-    TIME_STEP = 0.3
+    TIME_STEP = 0.05
+    SPEED_FACTOR = 2
     max_forward_speed = 20.0  # meters/seconds.
     acceleration_rate = 3.0  # meters/seconds*seconds.
     following_car_message = Message()
@@ -102,8 +103,8 @@ class Car:
         rad = self.get_direction() * pi / 180
         pos_x = self.get_x_position()
         pos_y = self.get_y_position()
-        pos_x_diff = -sin(rad) * self.get_speed() * self.TIME_STEP
-        pos_y_diff = -cos(rad) * self.get_speed() * self.TIME_STEP
+        pos_x_diff = -sin(rad) * self.get_speed() * self.TIME_STEP * self.SPEED_FACTOR
+        pos_y_diff = -cos(rad) * self.get_speed() * self.TIME_STEP * self.SPEED_FACTOR
         self.set_x_position(pos_x + pos_x_diff)
         self.set_y_position(pos_y + pos_y_diff)
 
@@ -672,3 +673,22 @@ class Car:
         :return: <int> direction variation of a car
         """
         return self.direction_variation
+
+    def get_virtual_x_position(self):
+        """
+        Returns the x position of the virtual caravan environment.
+        :return: <float> x position at the virtual environment
+        """
+        x_real = (self.get_x_position() - self.get_origin_x_position()) * sin(self.get_origin_direction() * pi / 180)
+        y_real = (self.get_y_position() - self.get_origin_y_position()) * cos(self.get_origin_direction() * pi / 180)
+        return abs(x_real + y_real)
+
+    def get_virtual_y_position(self):
+        """
+        Returns the x position of the virtual caravan environment.
+        :return: <float> x position at the virtual environment
+        """
+        x_real = - 1 * (self.get_x_position() - self.get_origin_x_position()) * cos(
+            self.get_origin_direction() * pi / 180)
+        y_real = (self.get_y_position() - self.get_origin_y_position()) * sin(self.get_origin_direction() * pi / 180)
+        return x_real + y_real
