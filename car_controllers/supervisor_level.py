@@ -18,7 +18,7 @@ def supervisor_level(new_cars, old_cars, attack=False):
         if not attack:
             for i in range(len(old_cars)):
                 other_car = old_cars[len(old_cars)-(i+1)]
-                if new_car.cross_path(other_car):
+                if new_car.cross_path(other_car.get_lane(), other_car.get_intention()):
                     other_car.add_follower(new_car)
                     new_car.set_controller(follower_controller)
                     new_car.start_following()
