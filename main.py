@@ -46,30 +46,33 @@ def main_simulation(graphic_environment, limit, *args, **kwargs):
     collision = False
     min_speed = 20
     max_speed = 20
-    last_lane = -1
     not_created_vehicles = 0
     collision_wait = False
     display_time_counter = 0
     lanes_waiting_time = [(0, 0), (0, 0), (0, 0), (0, 0)]
-    rate = 0.5
+    rate = 0.3
 
     for i in range(len(lanes_waiting_time)):
         lane = lanes_waiting_time[i]
         lanes_waiting_time[i] = (np.random.exponential(1.0/rate), lane[1])
     print_collision_message = False
-    old_virtual_distance = 0
+
+    collided_car_surface = pygame.Surface((50, 50))
+    collided_car_surface.fill((255, 0, 0, 0))
+
     while iteration and car_name_counter < limit:
         if not collision_wait:
+            events = pygame.event.get()
+            collision_wait = not continue_simulation(events)
             display_time_counter += 1
             counter += 1
             time = counter / 60.0
-
             for i in range(len(lanes_waiting_time)):
                 lanes_waiting_time[i] = (lanes_waiting_time[i][0], lanes_waiting_time[i][1] + 1)
                 if lanes_waiting_time[i][0] <= lanes_waiting_time[i][1]/60.0:
-                    new_car = random_car(car_name_counter, min_speed, max_speed, lane=car_name_counter)
+                    new_car = random_car(car_name_counter, min_speed, max_speed)
                     new_car.new_image()
-                    if not new_car.collide(cars) and car_name_counter < 4 and len(cars) == 0:
+                    if not new_car.collide(cars):
                         lanes_waiting_time[i] = (np.random.exponential(1.0 / rate), 0)
                         cars.append(new_car)
                         car_name_counter += 1
@@ -80,9 +83,6 @@ def main_simulation(graphic_environment, limit, *args, **kwargs):
                 if len(new_cars) > 0:
                     supervisor_level(new_cars, old_cars, attack_supervisory)
             for car in cars:
-                # print car.get_x_position() - 365
-                # print car.virtual_distance() - old_virtual_distance
-                old_virtual_distance = car.virtual_distance()
                 if distributed:
                     if not supervisor(cars) and car.is_new():  # TODO: change name of supervisor function and move it to car class
                         car.set_active_supervisory_level()
@@ -110,7 +110,6 @@ def main_simulation(graphic_environment, limit, *args, **kwargs):
                         left_intersection_cars.append(car)
                     continue
                 car.update()
-                print car.get_virtual_x_position(), car.get_virtual_y_position(), car.virtual_distance()
             collided_cars, collide = colliding_cars(cars)
             if collide and collided_cars[0].screen_car.colliderect(intersection_rect):
                 code = str(collided_cars[0].get_name()) + "to" + str(
@@ -157,12 +156,14 @@ def main_simulation(graphic_environment, limit, *args, **kwargs):
                 if wait and collide and collided_cars[0].screen_car.colliderect(intersection_rect):
                     collision_wait = True
             # if display_time_counter / 60 == 1:
-                    # display_time_counter = 0
+            #         actual_car_name = cars[0].get_name() if cars[0] is not None else -1
+            #         actual_car_position = cars[0].virtual_distance() if cars[0] is not None else -1
+            #         actual_car_intention = cars[0].get_intention() if cars[0] is not None else -1
+            #         display_time_counter = 0
+            #         sys.stdout.write("\r Car name " + str(actual_car_name) + " Car intention " + str(actual_car_intention) + " Car lane " + str(cars[0].get_lane()) + " Car virtual distance " + str(actual_car_position) + " ")
+            #         sys.stdout.flush()
             # sys.stdout.write("\r" + str(time) + " Waiting times: " + str([(k, j/60.0) for k, j in lanes_waiting_time]) + " " + str(counter))
-            asd_dir = 0 if len(cars) == 0 else cars[0].direction_variation
-            # print counter
-            # sys.stdout.write("\r Ticks" + str(counter) + " Direction variation " + str(asd_dir) + " difference " + str(counter - asd_dir))
-            # sys.stdout.flush()
+
         else:
             if print_collision_message:
                 print_collision_message = False
@@ -194,4 +195,4 @@ def print_percentages(times_tuple):
 # threading.Thread(target=main_simulation, args=(False, car_limit, "distributed")).start()
 # threading.Thread(target=main_simulation, args=(False, car_limit, "distributed")).start()
 car_limit = 1000000
-main_simulation(True, car_limit, "show_caravan", "wait", log="_law_control")
+main_simulation(True, car_limit, "show_caravan", "wait")
