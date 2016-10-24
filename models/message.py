@@ -1,4 +1,4 @@
-from math import pi, cos, sin, sqrt, pow
+from math import pi, cos, sin, sqrt, pow, atan
 from time import time
 
 
@@ -22,6 +22,7 @@ class Message:
             self.lane = car.get_lane()
             self.creation_time = car.get_creation_time()
             self.new = car.is_new()
+            self.intention = car.get_intention()
         else:
             self.actual_coordinates = (384, 384, 0, 1)
             self.origin_coordinates = (384, 384, 0, 1)
@@ -30,6 +31,7 @@ class Message:
             self.speed = 10
             self.creation_time = time()
             self.new = True
+            self.intention = "s"
         self.receiver = None
         self.type = "info"
         self.follower = None
@@ -41,9 +43,53 @@ class Message:
         Gets the virtual position of the car.
         :return: <int> virtual position of the car
         """
-        x_distance = (self.get_origin_x_position() - self.get_x_position()) * sin(self.get_direction() * pi / 180)
-        y_distance = (self.get_origin_y_position() - self.get_y_position()) * cos(self.get_direction() * pi / 180)
-        return x_distance + y_distance
+        virtual_distance_value = 0
+        conflict_zone_radio = 384.0
+        path_width = 172.0
+        right_turn_radio = path_width / 4.0
+        left_turn_radio = 3 * path_width / 4.0
+        initial_straight_section = conflict_zone_radio - path_width / 2.0
+        if self.get_intention() is "s":
+            virtual_distance_value = self.get_virtual_x_position()
+        elif self.get_intention() is "r":
+            if self.get_virtual_x_position() <= initial_straight_section:  # Calculate real virtual distance
+                virtual_distance_value = self.get_virtual_x_position()
+            elif self.get_virtual_y_position() > -right_turn_radio:
+                virtual_distance_value = initial_straight_section + atan(
+                    (self.get_virtual_x_position() - initial_straight_section) / (
+                        right_turn_radio + self.get_virtual_y_position())) * right_turn_radio
+            else:
+                virtual_distance_value = initial_straight_section + pi * right_turn_radio / 2.0 - \
+                                         self.get_virtual_y_position() - right_turn_radio
+
+            a = path_width / 2.0
+            b = right_turn_radio + path_width / 4.0
+            c = pi * right_turn_radio / 2.0
+            if virtual_distance_value <= initial_straight_section + c:  # Scale virtual distance
+                virtual_distance_value *= (initial_straight_section + a + b) / (initial_straight_section + c)
+            else:
+                virtual_distance_value += a + b - c
+
+        else:
+            if self.get_virtual_x_position() <= initial_straight_section:  # Calculate real virtual distance
+                virtual_distance_value = self.get_virtual_x_position()
+            elif self.get_virtual_y_position() < left_turn_radio:
+                virtual_distance_value = initial_straight_section + atan(
+                    (self.get_virtual_x_position() - initial_straight_section) / (
+                        left_turn_radio - self.get_virtual_y_position())) * left_turn_radio
+            else:
+                virtual_distance_value = initial_straight_section + pi * left_turn_radio / 2 + \
+                                         self.get_virtual_y_position() - left_turn_radio
+
+            a = path_width / 2
+            b = right_turn_radio + path_width / 4
+            c = pi * left_turn_radio / 2
+            if virtual_distance_value <= initial_straight_section + c:  # Scale virtual distance
+                virtual_distance_value *= (initial_straight_section + a + b) / (initial_straight_section + c)
+            else:
+                virtual_distance_value += a + b - c
+
+        return virtual_distance_value
 
     def distance_to_center(self):
         """
@@ -190,3 +236,32 @@ class Message:
         :return: <int> Acceleration of the car
         """
         return self.acceleration
+
+    def get_intention(self):
+        return self.intention
+
+    def get_virtual_x_position(self):
+        """
+        Returns the x position of the virtual caravan environment.
+        :return: <float> x position at the virtual environment
+        """
+        x_real = (self.get_x_position() - self.get_origin_x_position()) * sin(self.get_origin_direction() * pi / 180)
+        y_real = (self.get_y_position() - self.get_origin_y_position()) * cos(self.get_origin_direction() * pi / 180)
+        return abs(x_real + y_real)
+
+    def get_virtual_y_position(self):
+        """
+        Returns the x position of the virtual caravan environment.
+        :return: <float> x position at the virtual environment
+        """
+        x_real = - 1 * (self.get_x_position() - self.get_origin_x_position()) * cos(
+            self.get_origin_direction() * pi / 180)
+        y_real = (self.get_y_position() - self.get_origin_y_position()) * sin(self.get_origin_direction() * pi / 180)
+        return x_real + y_real
+
+    def get_origin_direction(self):
+        """
+        Return the direction of the origin coordinates of a car.
+        :return: <int> origin direction.
+        """
+        return self.origin_coordinates[2]
