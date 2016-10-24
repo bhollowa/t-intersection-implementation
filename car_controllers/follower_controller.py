@@ -13,19 +13,13 @@ def follower_controller(car):
     k_p = 0.2
     k_d = 0.7
     stand_still_distance = car.get_car_length() * 4
-    if car.get_intention() == "r":
-        if car.virtual_distance() >= (248 - 1.91362070578):
-            if car.get_direction_variation() < 90:
-                car.set_direction(car.get_direction() - 15)
-    elif car.get_intention() == "l":
-        if car.virtual_distance() >= 281:
-            if car.get_direction_variation() < 90:
-                car.set_direction(car.get_direction() + 15)
     if not car.is_following():
         car.set_controller(default_controller)
     car_message = car.get_following_car_message()
     if car_message is not None:
         virtual_distance = car_message.virtual_distance() - car.virtual_distance()
+        if virtual_distance < car.get_car_length():
+            car.set_speed(0)
         value_1 = -1 * car.get_control_law_value() + car_message.get_acceleration()
         value_2 = k_p * (virtual_distance - stand_still_distance - headway_time * car.get_speed())
         value_3 = k_d * ((virtual_distance - car.get_last_virtual_distance()) - headway_time * car.get_acceleration())
