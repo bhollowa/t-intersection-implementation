@@ -93,13 +93,17 @@ def random_car(name, min_speed, max_speed, **kwargs):
                 new_lane = (new_lane + 1) % 4
         pos_x, pos_y, direction, lane = initial_positions[new_lane]
     initial_speed = randint(min_speed, max_speed)
-    intention = "l"
-    random_intention = randint(0,2)
-    # if random_intention == 1:
-    #     intention = "r"
-    # elif random_intention == 2:
-    #     intention = "l"
-    return Car(str(name), pos_x, pos_y, direction=direction, lane=lane, absolute_speed=initial_speed, intention=intention)
+    if "intention" in kwargs:
+        intention = kwargs["intention"]
+    else:
+        intention = "s"
+        random_intention = randint(0,2)
+        if random_intention == 1:
+            intention = "r"
+        elif random_intention == 2:
+            intention = "l"
+    return Car(str(name), pos_x, pos_y, direction=direction, lane=lane, absolute_speed=initial_speed,
+               intention=intention)
 
 
 def colliding_cars(car_list):
@@ -299,3 +303,5 @@ def show_caravan(cars, screen, letter, collided_cars, screen_width):
         else:
             screen.blit(default_controller_surface, car[1])
         screen.blit(letter.render(str(car[0].get_name()), True, black), car[1].topleft)
+        screen.blit(letter.render(str(car[0].get_intention() + " " + str(car[0].get_lane() - 1)), True, black),
+                    car[1].bottomleft)
