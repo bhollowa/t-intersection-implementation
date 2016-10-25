@@ -14,8 +14,8 @@ class Car:
     of movement, the total movement will be escalated into x and y with the direction.
     Also, the car has a fixed acceleration and maximum speed.
     """
-    TIME_STEP = 0.05
-    SPEED_FACTOR = 4
+    TIME_STEP = 0.1
+    SPEED_FACTOR = 2
     max_forward_speed = 20.0  # meters/seconds.
     acceleration_rate = 3.0  # meters/seconds*seconds.
     following_car_message = Message()
@@ -107,15 +107,28 @@ class Car:
         pos_y_diff = -cos(rad) * self.get_speed() * self.TIME_STEP * self.SPEED_FACTOR
         self.set_x_position(pos_x + pos_x_diff)
         self.set_y_position(pos_y + pos_y_diff)
-        direction_change = 2
+
+    def turn(self):
+        """
+        Turns the car to the direction it intends to turn.
+        """
+        path_width = 172.0
+        conflict_zone_radio = 384.0
+        initial_straight_section = conflict_zone_radio - path_width / 2.0
         if self.get_intention() == "r":
-            if self.virtual_distance() >= 280.0:
+            right_turn_radio = path_width / 4.0
+            if self.get_virtual_y_position() > -right_turn_radio and self.get_virtual_x_position() > initial_straight_section:
                 if abs(self.get_direction_variation()) < 90:
-                    self.set_direction(self.get_direction() - direction_change * self.get_speed() / 20.0)
+                    direction_change = 90.0 * (self.get_speed() * self.TIME_STEP * self.SPEED_FACTOR) / (
+                        pi / 2 * right_turn_radio)
+                    self.set_direction(self.get_direction() - direction_change)
         elif self.get_intention() == "l":
-            if abs(self.virtual_distance()) >= 250:
-                if self.get_direction_variation() < 90:
-                    self.set_direction(self.get_direction() + direction_change * self.get_speed() / 20.0)
+            left_turn_radio = 3 * path_width / 4.0
+            if self.get_virtual_y_position() < left_turn_radio and self.get_virtual_x_position() > initial_straight_section:
+                if abs(self.get_direction_variation()) < 90:
+                    direction_change = 90.0 * (self.get_speed() * self.TIME_STEP * self.SPEED_FACTOR) / (
+                        pi / 2 * left_turn_radio)
+                    self.set_direction(self.get_direction() + direction_change)
 
     def accelerate(self):
         """
@@ -151,6 +164,7 @@ class Car:
         """
         self.accelerate()
         self.get_controller()(self)
+        self.turn()
         self.move()
         self.send_message()
         self.draw_car()
@@ -218,7 +232,7 @@ class Car:
                                          self.get_virtual_y_position() - left_turn_radio
 
             a = path_width / 2
-            b = right_turn_radio + path_width / 4
+            b = left_turn_radio - path_width / 4
             c = pi * left_turn_radio / 2
             if virtual_distance_value <= initial_straight_section + c:  # Scale virtual distance
                 virtual_distance_value *= (initial_straight_section + a + b) / (initial_straight_section + c)
@@ -483,8 +497,8 @@ class Car:
         :param new_direction: new direction of a car.
         """
         self.direction_variation += new_direction - self.get_direction()
-        if self.direction_variation >= 90.0:
-            new_direction = self.get_origin_direction() + self.direction_variation
+        if abs(self.direction_variation) >= 90.0:
+            new_direction = self.get_origin_direction() + 90 * self.direction_variation / abs(self.direction_variation)
         self.actual_coordinates = (
             self.get_x_position(), self.get_y_position(), new_direction, self.get_lane())
 
