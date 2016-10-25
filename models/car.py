@@ -62,6 +62,7 @@ class Car:
         self.lane = lane
         self.intention = intention
         self.direction_variation = 0
+        self.before_intersection = True
 
     def __str__(self):
         """
@@ -115,9 +116,12 @@ class Car:
         path_width = 172.0
         conflict_zone_radio = 384.0
         initial_straight_section = conflict_zone_radio - path_width / 2.0
+        if self.get_virtual_x_position() > initial_straight_section and self.get_controller() is not default_controller.default_controller:
+            self.set_controller(default_controller.default_controller)
         if self.get_intention() == "r":
             right_turn_radio = path_width / 4.0
             if self.get_virtual_y_position() > -right_turn_radio and self.get_virtual_x_position() > initial_straight_section:
+                self.before_intersection = False
                 if abs(self.get_direction_variation()) < 90:
                     direction_change = 90.0 * (self.get_speed() * self.TIME_STEP * self.SPEED_FACTOR) / (
                         pi / 2 * right_turn_radio)
@@ -774,3 +778,10 @@ class Car:
         :param intention: new intention of the car
         """
         self.intention = intention
+
+    def before_intersection_bool(self):
+        """
+        Function to get the boolean of if the car has joined the intersection or not.
+        :return:
+        """
+        return self.before_intersection
