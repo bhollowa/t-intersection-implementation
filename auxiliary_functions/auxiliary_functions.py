@@ -8,7 +8,7 @@ from car_controllers.follower_controller import follower_controller
 
 white = (255, 255, 255)  # RGB white color representation
 black = (0, 0, 0)  # RGB black color representation
-initial_positions = [(435, 760, 0, 1), (760, 345, 90, 2), (345, 10, 180, 3), (10, 435, 270, 4)]  # initial positions
+initial_positions = [(435, 760, 0, 0), (760, 345, 90, 1), (345, 10, 180, 2), (10, 435, 270, 3)]  # initial positions
 # of the cars per lane with the direction they should face.
 logger_directory = os.path.dirname(os.path.abspath(__file__)) + "/../logs/"
 
@@ -85,7 +85,7 @@ def random_car(name, min_speed, max_speed, **kwargs):
     :return: a Car object.
     """
     if "lane" in kwargs:
-        pos_x, pos_y, direction, lane = initial_positions[kwargs["lane"] - 1]
+        pos_x, pos_y, direction, lane = initial_positions[kwargs["lane"]]
     else:
         new_lane = randint(0, len(initial_positions) - 1)
         if "last_lane" in kwargs:
@@ -96,12 +96,22 @@ def random_car(name, min_speed, max_speed, **kwargs):
     if "intention" in kwargs:
         intention = kwargs["intention"]
     else:
-        intention = "s"
-        random_intention = randint(0, 2)
-        if random_intention == 1:
-            intention = "r"
-        elif random_intention == 2:
-            intention = "l"
+        random_intention = randint(0, 1)
+        if lane == 0:
+            if random_intention == 0:
+                intention = "r"
+            elif random_intention == 1:
+                intention = "s"
+        elif lane == 1:
+            if random_intention == 0:
+                intention = "r"
+            elif random_intention == 1:
+                intention = "l"
+        else:
+            if random_intention == 0:
+                intention = "s"
+            elif random_intention == 1:
+                intention = "l"
     return Car(str(name), pos_x, pos_y, direction=direction, lane=lane, absolute_speed=initial_speed,
                intention=intention)
 
@@ -303,5 +313,22 @@ def show_caravan(cars, screen, letter, collided_cars, screen_width):
         else:
             screen.blit(default_controller_surface, car[1])
         screen.blit(letter.render(str(car[0].get_name()), True, black), car[1].topleft)
-        screen.blit(letter.render(str(car[0].get_intention() + " " + str(car[0].get_lane() - 1)), True, black),
+        screen.blit(letter.render(str(car[0].get_intention() + " " + str(car[0].get_lane())), True, black),
                     car[1].bottomleft)
+
+
+def separate_by_lane(car_list, lane):
+    """
+    Function to separate the cars of a lane from the others
+    :param car_list: car of list
+    :param lane: lane to separate de car
+    :return: two lists, one with the cars of the same lane and other with the cars of the other lane.
+    """
+    same_lane_cars = []
+    different_lane_cars = []
+    for car in car_list:
+        if car.get_lane() == lane and not car.before_intersection_bool():
+            same_lane_cars.append(car)
+        else:
+            different_lane_cars.append(car)
+    return same_lane_cars, different_lane_cars
