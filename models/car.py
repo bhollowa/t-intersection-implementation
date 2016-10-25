@@ -180,13 +180,13 @@ class Car:
         self_lane = self.get_lane()
         self_intention = self.get_intention()
         lane_to_int_dict = {"l": 0, "s": 1, "r": 2}
-        table1 = [[True, True, True], [True, True, True], [True, True, True]]
-        table2 = [[True, True, False], [True, True, True], [False, False, False]]
-        table3 = [[False, True, True], [True, False, False], [True, False, False]]
-        table4 = [[True, True, False], [True, True, False],[False, True, False]]
-        all_tables = [table1, table2, table3, table4]
-        return all_tables[((other_car_lane - 1) - (self_lane - 1)) % 4][lane_to_int_dict[other_car_intention]][
-            lane_to_int_dict[self_intention]]
+        table0 = [[True, True, True], [True, True, True], [True, True, True]]
+        table1 = [[True, True, False], [True, True, False],[False, True, False]]
+        table2 = [[True, True, True], [True, False, False], [True, False, False]]
+        table3 = [[True, True, False], [True, True, True], [False, False, False]]
+        all_tables = [table0, table1, table2, table3]
+        return all_tables[(self_lane - other_car_lane) % 4][lane_to_int_dict[self_intention]][
+            lane_to_int_dict[other_car_intention]]
 
     def virtual_distance(self):
         """
@@ -767,3 +767,10 @@ class Car:
             self.get_origin_direction() * pi / 180)
         y_real = (self.get_y_position() - self.get_origin_y_position()) * sin(self.get_origin_direction() * pi / 180)
         return x_real + y_real
+
+    def set_intention(self, intention):
+        """
+        Set the intention of the car. Function created for test issues
+        :param intention: new intention of the car
+        """
+        self.intention = intention
