@@ -96,6 +96,12 @@ def random_car(name, min_speed, max_speed, **kwargs):
     if "intention" in kwargs:
         intention = kwargs["intention"]
     else:
+        # intention = "s"
+        # random_intention = randint(0, 2)
+        # if random_intention == 0:
+        #     intention = "l"
+        # elif random_intention == 1:
+        #     intention = "r"
         random_intention = randint(0, 1)
         if lane == 0:
             if random_intention == 0:
@@ -292,6 +298,7 @@ def show_caravan(cars, screen, letter, collided_cars, screen_width):
                     if new_rect.colliderect(virtual_car[1]):
                         new_rect.top += 50
                         virtual_car[1].top -= 50
+                        break
                 virtual_cars.append((not_leaders[i], new_rect))
                 break
 
@@ -313,6 +320,7 @@ def show_caravan(cars, screen, letter, collided_cars, screen_width):
         else:
             screen.blit(default_controller_surface, car[1])
         screen.blit(letter.render(str(car[0].get_name()), True, black), car[1].topleft)
+        screen.blit(letter.render(str(car[0].get_caravan_depth()), True, black), (car[1].topleft[0], car[1].topleft[1] - 30))
         screen.blit(letter.render(str(car[0].get_intention() + " " + str(car[0].get_lane())), True, black),
                     car[1].bottomleft)
 
@@ -327,7 +335,7 @@ def separate_by_lane(car_list, lane):
     same_lane_cars = []
     different_lane_cars = []
     for car in car_list:
-        if car.get_lane() == lane and not car.before_intersection_bool():
+        if car.get_lane() == lane and car.before_intersection_bool():
             same_lane_cars.append(car)
         else:
             different_lane_cars.append(car)
