@@ -14,12 +14,14 @@ def supervisor_level(new_cars, old_cars, attack=False):
     :param attack: if true, all cars will be set default controller, driving at maximum speed.
     """
     for new_car in new_cars:
+        old_cars.sort(key=lambda car: car.get_name(), reverse=True)
+        old_cars.sort(key=lambda car: car.get_caravan_depth(), reverse=True)
         new_car.set_old()
         if not attack:
-            for i in range(len(old_cars)):
-                other_car = old_cars[len(old_cars)-(i+1)]
-                if new_car.cross_path(other_car.get_lane(), other_car.get_intention()):
-                    other_car.add_follower(new_car)
+            for old_car in old_cars:
+                if new_car.cross_path(old_car.get_lane(), old_car.get_intention()):
+                    old_car.add_follower(new_car)
+                    new_car.set_caravan_depth(old_car.get_caravan_depth())
                     new_car.set_controller(follower_controller)
                     new_car.start_following()
                     break
