@@ -116,12 +116,13 @@ class Car:
         path_width = 172.0
         conflict_zone_radio = 384.0
         initial_straight_section = conflict_zone_radio - path_width / 2.0
+        if self.get_virtual_x_position() > initial_straight_section:
+            self.before_intersection = False
         if self.get_virtual_x_position() > initial_straight_section and self.get_controller() is not default_controller.default_controller:
             self.set_controller(default_controller.default_controller)
         if self.get_intention() == "r":
             right_turn_radio = path_width / 4.0
             if self.get_virtual_y_position() > -right_turn_radio and self.get_virtual_x_position() > initial_straight_section:
-                self.before_intersection = False
                 if abs(self.get_direction_variation()) < 90:
                     direction_change = 90.0 * (self.get_speed() * self.TIME_STEP * self.SPEED_FACTOR) / (
                         pi / 2 * right_turn_radio)
@@ -785,3 +786,20 @@ class Car:
         :return:
         """
         return self.before_intersection
+
+    def get_caravan_depth(self):
+        """
+        Get the depth of the car in the virtual caravan. Base case the car is at the top and it's depth is 0. The other
+        cases it's the following car depth plus 1.
+        :return: <int> depth of the car at the caravan.
+        """
+        if self.is_following():
+            return self.get_following_car_message().get_caravan_depth() + 1
+        return 0
+
+    def set_caravan_depth(self, new_depth):
+        """
+        Sets the depth of the caravan of this car. Function created for the supervisory level.
+        :param new_depth: new depth of the car at the caravan.
+        """
+        self.get_following_car_message().set_depth(new_depth)
