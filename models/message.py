@@ -23,6 +23,7 @@ class Message:
             self.creation_time = car.get_creation_time()
             self.new = car.is_new()
             self.intention = car.get_intention()
+            self.caravan_depth = car.get_caravan_depth()
         else:
             self.actual_coordinates = (384, 384, 0, 1)
             self.origin_coordinates = (384, 384, 0, 1)
@@ -32,6 +33,7 @@ class Message:
             self.creation_time = time()
             self.new = True
             self.intention = "s"
+            self.caravan_depth = 0
         self.receiver = None
         self.type = "info"
         self.follower = None
@@ -265,3 +267,17 @@ class Message:
         :return: <int> origin direction.
         """
         return self.origin_coordinates[2]
+
+    def get_caravan_depth(self):
+        """
+        Get the car depth at the caravan.
+        :return: <int> depth of the car at the caravan.
+        """
+        return self.caravan_depth
+
+    def set_depth(self, new_depth):
+        """
+        Sets the depth of the car at the caravan. Function created for the supervisory level.
+        :param new_depth: new depth of the car at the caravan.
+        """
+        self.caravan_depth = new_depth
