@@ -1,7 +1,7 @@
 import os
 import pygame
 from auxiliary_functions.auxiliary_functions import check_close_application, random_car, colliding_cars, \
-    display_info_on_car, create_logs, supervisor, separate_new_and_old_cars, continue_simulation, show_caravan
+    display_info_on_car, create_logs, supervisor, separate_new_and_old_cars, continue_simulation, show_caravan, order_cars_by_caravan_depth
 from car_controllers.supervisor_level import supervisor_level
 import sys
 import numpy as np
@@ -61,16 +61,14 @@ def main_simulation(graphic_environment, limit, *args, **kwargs):
     collided_car_surface.fill((255, 0, 0, 0))
 
     while iteration and car_name_counter < limit:
-        if not collision_wait:
-            events = pygame.event.get()
-            collision_wait = not continue_simulation(events)
+        if not collision_wait or not wait:
             display_time_counter += 1
             counter += 1
             time = counter / 60.0
             for i in range(len(lanes_waiting_time)):
                 lanes_waiting_time[i] = (lanes_waiting_time[i][0], lanes_waiting_time[i][1] + 1)
                 if lanes_waiting_time[i][0] <= lanes_waiting_time[i][1]/60.0:
-                    new_car = random_car(car_name_counter, min_speed, max_speed)
+                    new_car = random_car(car_name_counter, min_speed, max_speed, lane=car_name_counter % 3)
                     new_car.new_image()
                     if not new_car.collide(cars):
                         lanes_waiting_time[i] = (np.random.exponential(1.0 / rate), 0)
@@ -112,14 +110,14 @@ def main_simulation(graphic_environment, limit, *args, **kwargs):
                 car.update()
             collided_cars, collide = colliding_cars(cars)
             if collide and collided_cars[0].screen_car.colliderect(intersection_rect):
-                code = str(collided_cars[0].get_name()) + "to" + str(
-                    collided_cars[1].get_name())
-                if code not in collision_list:
+                collision_code = str(collided_cars[0].get_name()) + "to" + str(collided_cars[1].get_name())
+                if collision_code not in collision_list:
                     collision = True
-                    collision_list.append(code)
+                    collision_wait = True
+                    collision_list.append(collision_code)
                     collisions += 1
                     if log:
-                        collision_message = '{"collision_code":"' + code + '", "collision_initial_conditions":['
+                        collision_message = '{"collision_code":"' + collision_code + '", "collision_initial_conditions":['
                         for car in cars:
                             collision_message += car.to_json() + ','
                         collision_message = collision_message[:len(collision_message)-1] + '],"collided_cars":['
@@ -153,8 +151,6 @@ def main_simulation(graphic_environment, limit, *args, **kwargs):
                     show_caravan(cars, screen, font, collided_cars, screen_width)
                 pygame.display.update(screen.get_rect())
                 # clock.tick(fps)
-                if wait and collide and collided_cars[0].screen_car.colliderect(intersection_rect):
-                    collision_wait = True
             # if display_time_counter / 60 == 1:
             #         actual_car_name = cars[0].get_name() if cars[0] is not None else -1
             #         actual_car_position = cars[0].virtual_distance() if cars[0] is not None else -1
@@ -194,5 +190,5 @@ def print_percentages(times_tuple):
 
 # threading.Thread(target=main_simulation, args=(False, car_limit, "distributed")).start()
 # threading.Thread(target=main_simulation, args=(False, car_limit, "distributed")).start()
-car_limit = 1000000
-main_simulation(True, car_limit, "show_caravan", "wait")
+car_limit = 10000
+main_simulation(False, car_limit, log="_t-intersection_good_supervisor")
