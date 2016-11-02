@@ -96,7 +96,7 @@ def random_car(name, min_speed, max_speed, **kwargs):
     if "intention" in kwargs:
         intention = kwargs["intention"]
     else:
-        # intention = "s"
+        intention = "s"
         # random_intention = randint(0, 2)
         # if random_intention == 0:
         #     intention = "l"
@@ -165,7 +165,7 @@ def random_cars_from_lanes(lanes, name, max_speed):
     """
     new_cars = []
     for i in range(len(lanes)):
-        new_cars.append(random_car(name + i, max_speed, lane=lanes[i]))
+        new_cars.append(random_car(name + i, max_speed, max_speed, lane=lanes[i]))
     return new_cars
 
 
@@ -176,7 +176,6 @@ def create_random_cars(number_of_cars, check_last_lane):
     :param check_last_lane: <boolean> if True, next car created will have a different lane
     :return: <list> cars created
     """
-    import time
     cars = []
     min_speed = 10
     max_speed = 20
@@ -320,7 +319,8 @@ def show_caravan(cars, screen, letter, collided_cars, screen_width):
         else:
             screen.blit(default_controller_surface, car[1])
         screen.blit(letter.render(str(car[0].get_name()), True, black), car[1].topleft)
-        screen.blit(letter.render(str(car[0].get_caravan_depth()), True, black), (car[1].topleft[0], car[1].topleft[1] - 30))
+        screen.blit(letter.render(str(car[0].get_caravan_depth()), True, black),
+                    (car[1].topleft[0], car[1].topleft[1] - 30))
         screen.blit(letter.render(str(car[0].get_intention() + " " + str(car[0].get_lane())), True, black),
                     car[1].bottomleft)
 
