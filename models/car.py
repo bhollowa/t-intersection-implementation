@@ -1,5 +1,5 @@
 import os
-from math import pi, cos, sin, sqrt, pow, atan
+from math import pi, cos, sin, atan
 from pygame import image, transform
 from time import time
 from car_controllers import default_controller, follower_controller
@@ -71,14 +71,12 @@ class Car:
         Example: "Car: 48 Speed: 19.975" else.
         :return: String representation of the car.
         """
-        if self.get_following_car_message() is not None:
-            return '{"car_name":' + str(self.name) + ',"following":' + str(
-                self.get_following_car_message().car_name) + ',"lane":' + str(self.lane) + ',"speed":' + str(
-                self.initial_speed) + ',"creation_time":' + str(
-                self.creation_time) + ',"left_intersection_time":' + str(self.left_intersection_time) + '}'
-        return '{"car_name":' + str(self.name) + ',"lane":' + str(self.lane) + ',"speed":' + str(self.initial_speed) + \
-               ',"creation_time":' + str(self.creation_time) + ',"left_intersection_time":' + \
-               str(self.left_intersection_time) + '}'
+        return '{"car_name":' + str(self.get_name()) + \
+               ',"following":' + str(self.get_following_car_message().get_car_name()) + \
+               ',"lane":' + str(self.get_lane()) + \
+               ',"speed":' + str(self.get_initial_speed()) + \
+               ',"creation_time":' + str(self.get_creation_time()) + \
+               ',"left_intersection_time":' + str(self.get_left_intersection_time()) + '}'
 
     def to_json(self):
         """
@@ -86,13 +84,18 @@ class Car:
         :return: sting of json representation of a car.
         """
         return_string = '{'
-        return_string += '"name":' + str(self.get_name()) + ','
-        return_string += '"following":' + str(self.get_following_car_message().car_name) + ','
-        return_string += '"lane":' + str(self.lane) + ','
-        return_string += '"speed":' + str(self.get_speed()) + ','
-        return_string += '"creation_time":' + str(self.creation_time) + ','
-        return_string += '"left_intersection_time":' + str(self.left_intersection_time) \
-            if self.left_intersection_time is not None else '"left_intersection_time":' + str(-1)
+        return_string += '"name":' + str(self.get_name())
+        return_string += ',"following":' + str(self.get_following_car_message().get_car_name())
+        return_string += ',"lane":' + str(self.get_lane())
+        return_string += ',"speed":' + str(self.get_speed())
+        return_string += ',"creation_time":' + str(self.get_creation_time())
+        return_string += ',"left_intersection_time":' + str(self.get_left_intersection_time())
+        return_string += ',"intention":"' + self.get_intention() + '"'
+        return_string += ',"actual_coordinates":{ '
+        return_string += '"x_coordinate":' + str(self.get_x_position())
+        return_string += ',"y_coordinate":' + str(self.get_y_position())
+        return_string += ',"direction":' + str(self.get_direction())
+        return_string += '}'
         return_string += '}'
         return return_string
 
@@ -118,18 +121,21 @@ class Car:
         initial_straight_section = conflict_zone_radio - path_width / 2.0
         if self.get_virtual_x_position() > initial_straight_section:
             self.before_intersection = False
-        if self.get_virtual_x_position() > initial_straight_section and self.get_controller() is not default_controller.default_controller:
+        if self.get_virtual_x_position() > initial_straight_section and \
+                self.get_controller() is not default_controller.default_controller:
             self.set_controller(default_controller.default_controller)
         if self.get_intention() == "r":
             right_turn_radio = path_width / 4.0
-            if self.get_virtual_y_position() > -right_turn_radio and self.get_virtual_x_position() > initial_straight_section:
+            if self.get_virtual_y_position() > -right_turn_radio and \
+                    self.get_virtual_x_position() > initial_straight_section:
                 if abs(self.get_direction_variation()) < 90:
                     direction_change = 90.0 * (self.get_speed() * self.TIME_STEP * self.SPEED_FACTOR) / (
                         pi / 2 * right_turn_radio)
                     self.set_direction(self.get_direction() - direction_change)
         elif self.get_intention() == "l":
             left_turn_radio = 3 * path_width / 4.0
-            if self.get_virtual_y_position() < left_turn_radio and self.get_virtual_x_position() > initial_straight_section:
+            if self.get_virtual_y_position() < left_turn_radio and \
+                    self.get_virtual_x_position() > initial_straight_section:
                 if abs(self.get_direction_variation()) < 90:
                     direction_change = 90.0 * (self.get_speed() * self.TIME_STEP * self.SPEED_FACTOR) / (
                         pi / 2 * left_turn_radio)
@@ -186,7 +192,7 @@ class Car:
         self_intention = self.get_intention()
         lane_to_int_dict = {"l": 0, "s": 1, "r": 2}
         table0 = [[True, True, True], [True, True, True], [True, True, True]]
-        table1 = [[True, True, False], [True, True, False],[False, True, False]]
+        table1 = [[True, True, False], [True, True, False], [False, True, False]]
         table2 = [[True, True, True], [True, False, False], [True, False, False]]
         table3 = [[True, True, False], [True, True, True], [False, False, False]]
         all_tables = [table0, table1, table2, table3]
@@ -198,7 +204,6 @@ class Car:
         Gets the virtual position of the car.
         :return: <int> virtual position of the car
         """
-        virtual_distance_value = 0
         conflict_zone_radio = 384.0
         path_width = 172.0
         right_turn_radio = path_width / 4.0
@@ -613,6 +618,13 @@ class Car:
         """
         return self.creation_time
 
+    def get_left_intersection_time(self):
+        """
+        Getter for the time at which the car left the intersection. -1 if it hasn't left yet.
+        :return: Time at which the car left the intersection.
+        """
+        return self.left_intersection_time if self.left_intersection_time is not None else -1
+
     def get_following_car_name(self):
         """
         Returns the name of the car that this car is following. If the name is -1, this car is not following another.
@@ -803,3 +815,10 @@ class Car:
         :param new_depth: new depth of the car at the caravan.
         """
         self.get_following_car_message().set_depth(new_depth)
+
+    def get_initial_speed(self):
+        """
+        Returns the initial speed of the car (his speed at the creation time).
+        :return: <int> initial speed
+        """
+        return self.initial_speed
