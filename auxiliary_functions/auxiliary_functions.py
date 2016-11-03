@@ -68,7 +68,7 @@ def check_close_application(user_input):
 
 def continue_simulation(user_input):
     for event in user_input:
-        if hasattr(event, 'key'):
+        if event.type == pygame.KEYUP:
             return False
     return True
 
@@ -151,7 +151,7 @@ def display_info_on_car(car, display, letter, *args):
     if "speed" in args:
         display.blit(letter.render(str(car.get_speed()), True, black), (x, y - 30))
     if "following" in args and car.get_following_car_message() is not None:
-        display.blit(letter.render(str(car.get_following_car_message().car_name), True, black), (x, y - 30))
+        display.blit(letter.render(str(car.get_following_car_message().get_car_name()), True, black), (x, y - 30))
 
 
 def random_cars_from_lanes(lanes, name, max_speed):
@@ -285,7 +285,8 @@ def show_caravan(cars, screen, letter, collided_cars, screen_width):
             leaders.append(car)
         else:
             not_leaders.append(car)
-
+    leaders.sort(key=lambda real_car: real_car.get_name())
+    not_leaders.sort(key=lambda real_car: real_car.get_name())
     virtual_cars = []
     for i in range(len(leaders)):
         virtual_cars.append((leaders[i], pygame.Rect((screen_width - 100, 700 * (i + 1) / (len(leaders) + 1)), size)))
@@ -340,3 +341,23 @@ def separate_by_lane(car_list, lane):
         else:
             different_lane_cars.append(car)
     return same_lane_cars, different_lane_cars
+
+
+def init_graphic_environment(screen_width, screen_height):
+    """
+    Initialize the graphic environment.
+    :param screen_width: width of the screen.
+    :param screen_height: height of the screen.
+    :return: the screen, the backgrounds and the font.
+    """
+    images_directory = os.path.dirname(os.path.abspath(__file__)) + "/../images/"
+    screen = pygame.display.set_mode((screen_width, screen_height))
+    intersection_background = pygame.image.load(images_directory + "background.jpg")
+    background = pygame.Surface(screen.get_size())
+    background = background.convert(background)
+    background.fill((250, 250, 250))
+    pygame.init()
+    font = pygame.font.SysFont('Arial', 20)
+    pygame.display.set_caption('Car simulation')
+
+    return screen, background, intersection_background, font
