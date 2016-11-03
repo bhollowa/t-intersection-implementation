@@ -91,6 +91,11 @@ class Car:
         return_string += ',"y_coordinate":' + str(self.get_y_position())
         return_string += ',"direction":' + str(self.get_direction())
         return_string += '}'
+        return_string += ',"initial_coordinates":{ '
+        return_string += '"x_coordinate":' + str(self.get_origin_x_position())
+        return_string += ',"y_coordinate":' + str(self.get_origin_y_position())
+        return_string += ',"direction":' + str(self.get_origin_direction())
+        return_string += '}'
         return_string += '}'
         return return_string
 
@@ -501,7 +506,7 @@ class Car:
         Sets the new direction of a car.
         :param new_direction: new direction of a car.
         """
-        self.direction_variation += new_direction - self.get_direction()
+        self.set_direction_variation(self.get_direction_variation() + new_direction - self.get_direction())
         if abs(self.direction_variation) >= 90.0:
             new_direction = self.get_origin_direction() + 90 * self.direction_variation / abs(self.direction_variation)
         self.actual_coordinates = (
@@ -826,3 +831,38 @@ class Car:
         self.set_x_position(initial_positions[self.get_lane()][0])
         self.set_y_position(initial_positions[self.get_lane()][1])
         self.set_direction(initial_positions[self.get_lane()][2])
+        self.set_origin_x_position(initial_positions[self.get_lane()][0])
+        self.set_origin_y_position(initial_positions[self.get_lane()][1])
+        self.set_origin_direction(initial_positions[self.get_lane()][2])
+        self.set_direction_variation(0)
+
+    def set_origin_x_position(self, new_x):
+        """
+        Sets the initial x position of a car
+        :param new_x: new x initial position
+        """
+        self.initial_coordinates = (
+            new_x, self.get_origin_y_position(), self.get_origin_direction(), self.get_lane())
+
+    def set_origin_y_position(self, new_y):
+        """
+        Sets the initial y position of a car
+        :param new_y: new y initial position
+        """
+        self.initial_coordinates = (
+            self.get_origin_x_position(), new_y, self.get_origin_direction(), self.get_lane())
+
+    def set_origin_direction(self, new_direction):
+        """
+        Sets the initial x position of a car
+        :param new_direction: new initial direction
+        """
+        self.initial_coordinates = (
+            self.get_origin_x_position(), self.get_origin_y_position(), new_direction, self.get_lane())
+
+    def set_direction_variation(self, new_direction_variation):
+        """
+        Sets the direction variation to a new value.
+        :param new_direction_variation: new vale of direction variation
+        """
+        self.direction_variation = new_direction_variation
