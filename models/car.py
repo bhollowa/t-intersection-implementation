@@ -71,12 +71,7 @@ class Car:
         Example: "Car: 48 Speed: 19.975" else.
         :return: String representation of the car.
         """
-        return '{"car_name":' + str(self.get_name()) + \
-               ',"following":' + str(self.get_following_car_message().get_car_name()) + \
-               ',"lane":' + str(self.get_lane()) + \
-               ',"speed":' + str(self.get_initial_speed()) + \
-               ',"creation_time":' + str(self.get_creation_time()) + \
-               ',"left_intersection_time":' + str(self.get_left_intersection_time()) + '}'
+        return "Car " + str(self.get_name()) + " lane " + str(self.get_lane()) + " intention " + self.get_intention()
 
     def to_json(self):
         """
