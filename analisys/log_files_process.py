@@ -56,7 +56,8 @@ def generate_collision_cars_from_file(collisions_file, all_cars):
                                                           pos_y=car_information["actual_coordinates"]["y_coordinate"],
                                                           direction=car_information["actual_coordinates"]["direction"],
                                                           lane=car_information["lane"],
-                                                          intention=car_information["intention"])
+                                                          intention=car_information["intention"],
+                                                          creation_time=car_information["creation_time"])
             if collision_cars[car_information["name"]].get_name() == collided_cars_information[0]["name"] or collision_cars[car_information["name"]].get_name() == collided_cars_information[1]["name"]:
                 collided_cars[counter].append(collision_cars[car_information["name"]])
         for car_information in collision_information["collision_initial_conditions"]:
