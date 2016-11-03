@@ -817,3 +817,12 @@ class Car:
         :return: <int> initial speed
         """
         return self.initial_speed
+
+    def reset(self):
+        """
+        Sets all the attributes of the car as if it just arrived at the intersection.
+        """
+        initial_positions = [(435, 760, 0, 0), (760, 345, 90, 1), (345, 10, 180, 2), (10, 435, 270, 3)]
+        self.set_x_position(initial_positions[self.get_lane()][0])
+        self.set_y_position(initial_positions[self.get_lane()][1])
+        self.set_direction(initial_positions[self.get_lane()][2])
