@@ -13,24 +13,6 @@ initial_positions = [(435, 760, 0, 0), (760, 345, 90, 1), (345, 10, 180, 2), (10
 logger_directory = os.path.dirname(os.path.abspath(__file__)) + "/../logs/"
 
 
-def distance_to_center(**kwargs):
-    """
-    Returns the distance to the center of the indicated object. the car must be passed in the "car" param  and the
-    message in the message param.
-
-    Example: car: example_car = Car()
-                  distance_to_center(car=example_car)
-    Example: message: example_message = Message()
-                  distance_to_center(message=example_message)
-    :param kwargs: car or message param. If both passed, it will return the distance to the center of the car.
-    :return: distance to the center of the car or of the information of a car stored in a message.
-    """
-    if 'car' in kwargs:
-        return kwargs['car'].distance_to_center()
-    elif 'message' in kwargs:
-        return kwargs['message'].distance_to_center()
-
-
 def reposition_car_in_screen(screen, car):
     """
     Function to graphically reposition a car in the screen so it doesnt get lost.
@@ -151,7 +133,7 @@ def display_info_on_car(car, display, letter, *args):
     if "speed" in args:
         display.blit(letter.render(str(car.get_speed()), True, black), (x, y - 30))
     if "following" in args and car.get_following_car_message() is not None:
-        display.blit(letter.render(str(car.get_following_car_message().get_car_name()), True, black), (x, y - 30))
+        display.blit(letter.render(str(car.get_following_car_message().get_name()), True, black), (x, y - 30))
 
 
 def random_cars_from_lanes(lanes, name, max_speed):
@@ -298,7 +280,6 @@ def show_caravan(cars, screen, letter, collided_cars, screen_width):
                     if new_rect.colliderect(virtual_car[1]):
                         new_rect.top += 50
                         virtual_car[1].top -= 50
-                        break
                 virtual_cars.append((not_leaders[i], new_rect))
                 break
 
@@ -324,23 +305,6 @@ def show_caravan(cars, screen, letter, collided_cars, screen_width):
                     (car[1].topleft[0], car[1].topleft[1] - 30))
         screen.blit(letter.render(str(car[0].get_intention() + " " + str(car[0].get_lane())), True, black),
                     car[1].bottomleft)
-
-
-def separate_by_lane(car_list, lane):
-    """
-    Function to separate the cars of a lane from the others
-    :param car_list: car of list
-    :param lane: lane to separate de car
-    :return: two lists, one with the cars of the same lane and other with the cars of the other lane.
-    """
-    same_lane_cars = []
-    different_lane_cars = []
-    for car in car_list:
-        if car.get_lane() == lane and car.before_intersection_bool():
-            same_lane_cars.append(car)
-        else:
-            different_lane_cars.append(car)
-    return same_lane_cars, different_lane_cars
 
 
 def init_graphic_environment(screen_width, screen_height):

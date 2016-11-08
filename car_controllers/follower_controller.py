@@ -1,4 +1,5 @@
 from car_controllers.default_controller import default_controller
+from scipy.misc import derivative
 
 
 def follower_controller(car):
@@ -9,10 +10,12 @@ def follower_controller(car):
     :param car: car to bre controlled
     :return: new inputs of the car.
     """
+    def virtual_distance_for_dev(delta):
+        return car.virtual_distance() + car.get_speed() * delta + car.get_acceleration() * (delta ** 2) / 2
     headway_time = 0.7
     k_p = 0.2
     k_d = 0.7
-    stand_still_distance = car.get_car_length() * 4
+    stand_still_distance = car.get_car_length() * 5
     if not car.is_following():
         car.set_controller(default_controller)
     car_message = car.get_following_car_message()
@@ -25,5 +28,5 @@ def follower_controller(car):
         value_3 = k_d * ((virtual_distance - car.get_last_virtual_distance()) - headway_time * car.get_acceleration())
         control_law_derivative = (value_1 + value_2 + value_3) / headway_time
         car.set_last_virtual_distance(virtual_distance)
-        car.set_control_law_value((car.get_acceleration() + control_law_derivative)%3)
+        car.set_control_law_value((car.get_acceleration() + control_law_derivative) % 3)
         car.set_acceleration(car.get_acceleration() + control_law_derivative)

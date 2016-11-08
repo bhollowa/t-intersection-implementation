@@ -1,13 +1,14 @@
-from math import pi, cos, sin, sqrt, pow, atan
+from math import pi, cos, sin, atan
 from time import time
 
 
-class Message:
+class Message(object):
     """
     Message object that can be created from a car. If no car is given, the message will have an "invalid" car name
     (a negative one).
     The message can give the distance to the center of the car from it was created (based on the information given).
     """
+
     def __init__(self, car=None):
         """
         Constructor of a message. The car can be given to use its information.
@@ -18,7 +19,7 @@ class Message:
             self.origin_coordinates = car.get_origin_coordinates()
             self.acceleration = car.get_acceleration()
             self.speed = car.get_speed()
-            self.car_name = car.get_name()
+            self.name = car.get_name()
             self.lane = car.get_lane()
             self.creation_time = car.get_creation_time()
             self.new = car.is_new()
@@ -28,7 +29,7 @@ class Message:
             self.actual_coordinates = (384, 384, 0, 1)
             self.origin_coordinates = (384, 384, 0, 1)
             self.acceleration = 3
-            self.car_name = -1
+            self.name = -1
             self.speed = 10
             self.creation_time = time()
             self.new = True
@@ -93,20 +94,6 @@ class Message:
 
         return virtual_distance_value
 
-    def distance_to_center(self):
-        """
-        Returns the distance of the car who created the message to the perpendicular line to the center of the screen
-        depending of the direction of the car. Only works if the car is perpendicular to one of those lines.
-        :return: distance to the perpendicular line to the direction of the car who created the message at the center of
-         the screen.
-        """
-        x = 1 if self.get_x_position() % 384 == 0 else 0
-        y = 1 if self.get_y_position() % 384 == 0 else 0
-        sign = cos(self.get_direction() * pi / 180) * (self.get_y_position() - 384) / abs(
-            self.get_y_position() - 384 + y) + sin(self.get_direction() * pi / 180) * (
-        self.get_x_position() - 384) / abs(self.get_x_position() - 384 + x)
-        return sign*sqrt(pow(self.get_x_position() - 384,2) + pow(self.get_y_position() - 384, 2))
-
     def is_new(self):
         """
         Check if the car that created this message is new at the intersection. a car is new at an intersection if it
@@ -114,20 +101,6 @@ class Message:
         :return: True if the car is new at the intersection. False otherwise.
         """
         return self.new
-
-    def cross_path(self, other_car_message):
-        """
-        Check if the path of one car crosses tih the path o f another. It is true if the other car is the same lane
-        or if the other car is in one of the perpendicular lanes.
-        :param other_car_message: information of the other car in a message.
-        :return: True if the paths does not crosses, False otherwise.
-        """
-        if self.lane == 1 and other_car_message.lane == 3 or self.lane == 3 and other_car_message.lane == 1:
-            return False
-        elif self.lane == 2 and other_car_message.lane == 4 or self.lane == 4 and other_car_message.lane == 2:
-            return False
-        else:
-            return True
 
     def set_receiver(self, receiver):
         """
@@ -156,12 +129,12 @@ class Message:
         """
         self.type = message_type
 
-    def get_car_name(self):
+    def get_name(self):
         """
         Gets the name which identifies the car.
         :return: Name of the car
         """
-        return self.car_name
+        return self.name
 
     def get_follower(self):
         """
@@ -281,3 +254,120 @@ class Message:
         :param new_depth: new depth of the car at the caravan.
         """
         self.caravan_depth = new_depth
+
+    def get_lane(self):
+        return self.lane
+
+    def cross_path(self, other_car_lane, other_car_intention):
+        """
+        Check if the path of one car crosses tih the path o f another. It is true if the other car is the same lane
+        or if the other car is in one of the perpendicular lanes.
+        :param other_car_intention: the intention of way of the other car
+        :param other_car_lane: the lane at which the other car star its way.
+        :return: True if the paths does not crosses, False otherwise.
+        """
+        self_lane = self.get_lane()
+        self_intention = self.get_intention()
+        lane_to_int_dict = {"l": 0, "s": 1, "r": 2}
+        table0 = [[True, True, True], [True, True, True], [True, True, True]]
+        table1 = [[True, True, False], [True, True, False], [False, True, False]]
+        table2 = [[True, True, True], [True, False, False], [True, False, False]]
+        table3 = [[True, True, False], [True, True, True], [False, False, False]]
+        all_tables = [table0, table1, table2, table3]
+        return all_tables[(self_lane - other_car_lane) % 4][lane_to_int_dict[self_intention]][
+            lane_to_int_dict[other_car_intention]]
+
+
+class InfoMessage(Message):
+    """
+    Message used to update the info of the car that is being followed by another car.
+    """
+    def process(self, car):
+        """
+        Process the message. Sets the old message to be this new one, so the information of the car is updated.
+        :param car: car whose following car information will be updated.
+        """
+        if car.get_following_car_message().get_name() == self.get_name():
+            car.set_following_car_message(self)
+
+
+class NewCarMessage(Message):
+    """
+    Message used to inform all the other cars that a new car has arrived at the intersection.
+    """
+    def process(self, car):
+        """
+        Process the message. Creates a new car with the information present at this message and add it to the list of
+        cars present at the intersection.
+        :param car: car to add a new car to the list of cars present at the intersection.
+        """
+        car.add_new_car(self)
+
+
+class LeftIntersectionMessage(Message):
+    """
+    Message used to inform all the other cars that a car has left the intersection.
+    """
+    def process(self, car):
+        """
+        Process the message. Deletes the car that created this message from the list of cars present at the
+        intersection.
+        :param car: car to update information
+        """
+        car.delete_car(self)
+
+
+class SupervisorLeftIntersectionMessage(Message):
+    """
+    Message created by a car that was supervisor and has left the intersection.
+    """
+    def __init__(self, car):
+        """
+        Initializer for this message. The only new information needed is the cars at the intersection.
+        :param car: supervisor leaving the intersection.
+        """
+        super(self.__class__, self).__init__(car)
+        self.cars_at_intersection = car.get_cars_at_intersection()
+        self.new_supervisor_name = car.get_new_supervisor_name()
+
+    def process(self, car):
+        """
+        Process the message. Makes the car the new supervisor and gives it all the information needs to work correctly.
+        :param car: new supervisor.
+        """
+        if car.get_name() == self.get_new_supervisor_name():
+            car.make_supervisor(self)
+
+    def get_cars_at_intersection(self):
+        """
+        Returns the list of cars present at the intersection
+        :return: list of cars
+        """
+        return self.cars_at_intersection
+
+    def get_new_supervisor_name(self):
+        return self.new_supervisor_name
+
+
+class FollowingCarMessage(Message):
+    """
+    Message used to inform a specific car wich car it must follow.
+    """
+    def __init__(self, car, following_car_name):
+        """
+        Initializer for this message. The only new information needed is the cars at the intersection.
+        :param car: supervisor leaving the intersection.
+        """
+        super(self.__class__, self).__init__(car)
+        self.following_car_name = following_car_name
+
+    def process(self, car):
+        """
+        Process the message. Makes the car that this message is for
+        :param car: car to update information
+        """
+        if car.get_name() == self.get_following_car_name():
+            car.start_following(self)
+
+    def get_following_car_name(self):
+        return self.following_car_name

@@ -3,12 +3,12 @@ from math import pi, cos, sin, atan
 from pygame import image, transform
 from time import time
 from car_controllers import default_controller, follower_controller
-from models.message import Message
+from models.message import Message, InfoMessage, FollowingCarMessage
 
 images_directory = os.path.dirname(os.path.abspath(__file__)) + "/../images/"
 
 
-class Car:
+class Car(object):
     """
     Car representation. It has x and y position (as in a cartesian plane), an absolute speed and a direction. In case
     of movement, the total movement will be escalated into x and y with the direction.
@@ -47,22 +47,21 @@ class Car:
         self.initial_coordinates = (pos_x, pos_y, direction, lane)
         self.actual_coordinates = (pos_x, pos_y, direction, lane)
         self.absolute_speed = absolute_speed
+        self.lane = lane
+        self.intention = intention
         self.image = None
         self.rotated_image = None
         self.screen_car = None
         self.follower_cars = []  # all the followers of the car will be here, so this car can send it information
         # to the others
+        self.cars_at_intersection = []
+        self.new_messages = []
         self.follow = False  # True if the car is following some other car
         self.active_supervisory = False
         self.new_car = True
-        self.supervisor_messages = []
-        self.supervisor_result_messages = []
         self.control_law_value = 0
         self.last_virtual_distance = 0
-        self.lane = lane
-        self.intention = intention
-        self.direction_variation = 0
-        self.before_intersection = True
+        self.new_supervisor_name = -1
 
     def __str__(self):
         """
@@ -80,7 +79,7 @@ class Car:
         """
         return_string = '{'
         return_string += '"name":' + str(self.get_name())
-        return_string += ',"following":' + str(self.get_following_car_message().get_car_name())
+        return_string += ',"following":' + str(self.get_following_car_message().get_name())
         return_string += ',"lane":' + str(self.get_lane())
         return_string += ',"speed":' + str(self.get_speed())
         return_string += ',"creation_time":' + str(self.get_creation_time())
@@ -119,8 +118,6 @@ class Car:
         path_width = 172.0
         conflict_zone_radio = 384.0
         initial_straight_section = conflict_zone_radio - path_width / 2.0
-        if self.get_virtual_x_position() > initial_straight_section:
-            self.before_intersection = False
         if self.get_virtual_x_position() > initial_straight_section and \
                 self.get_controller() is not default_controller.default_controller:
             self.set_controller(default_controller.default_controller)
@@ -128,18 +125,16 @@ class Car:
             right_turn_radio = path_width / 4.0
             if self.get_virtual_y_position() > -right_turn_radio and \
                     self.get_virtual_x_position() > initial_straight_section:
-                if abs(self.get_direction_variation()) < 90:
-                    direction_change = 90.0 * (self.get_speed() * self.TIME_STEP * self.SPEED_FACTOR) / (
-                        pi / 2 * right_turn_radio)
-                    self.set_direction(self.get_direction() - direction_change)
+                direction_change = 90.0 * (self.get_speed() * self.TIME_STEP * self.SPEED_FACTOR) / (
+                    pi / 2 * right_turn_radio)
+                self.set_direction(self.get_direction() - direction_change)
         elif self.get_intention() == "l":
             left_turn_radio = 3 * path_width / 4.0
             if self.get_virtual_y_position() < left_turn_radio and \
                     self.get_virtual_x_position() > initial_straight_section:
-                if abs(self.get_direction_variation()) < 90:
-                    direction_change = 90.0 * (self.get_speed() * self.TIME_STEP * self.SPEED_FACTOR) / (
-                        pi / 2 * left_turn_radio)
-                    self.set_direction(self.get_direction() + direction_change)
+                direction_change = 90.0 * (self.get_speed() * self.TIME_STEP * self.SPEED_FACTOR) / (
+                    pi / 2 * left_turn_radio)
+                self.set_direction(self.get_direction() + direction_change)
 
     def accelerate(self):
         """
@@ -177,8 +172,8 @@ class Car:
         self.get_controller()(self)
         self.turn()
         self.move()
-        self.send_message()
         self.draw_car()
+        self.get_new_messages().append(InfoMessage(self))
 
     def cross_path(self, other_car_lane, other_car_intention):
         """
@@ -251,76 +246,18 @@ class Car:
 
         return virtual_distance_value
 
-    def send_message(self):
-        """
-        Creates and send a message of the actual state of the car.
-        """
-        message = Message(self)
-        for car in self.follower_cars:
-            car.receive(message)
-
-    def receive(self, message):
-        """
-        Gets a message with info of the following car, or instructions for a follower car.
-        :param message: new message received.
-        """
-        message_type = message.get_type()
-        if message_type is "info":
-            self.set_following_car_message(message)
-        elif message_type is "follower":
-            self.process_follower_message(message)
-        elif message_type is "following":
-            self.process_following_message()
-        elif message_type is "not_following":
-            self.process_not_following_message()
-        else:
-            print "INCORRECT MESSAGE TYPE, RECEIVED " + message_type if message_type is not None else \
-                "INCORRECT MESSAGE TYPE, NONE RECEIVED "
-
-    def process_follower_message(self, message):
-        """
-        Process a follower message, setting a new car that is following this car.
-        :param message: message with the necessary information.
-        """
-        self.add_follower(message.get_car())
-
-    def process_following_message(self):
-        """
-        Set the car variables to follow another car.
-        """
-        self.set_controller(follower_controller.follower_controller)
-        self.start_following()
-        self.set_old()
-
-    def process_not_following_message(self):
-        """
-        Sets the car controller as default, as it is not following any other car.
-        """
-        self.set_controller(default_controller.default_controller)
-        self.set_old()
-
-    def clear_supervisor_messages(self):
-        """
-        Sets the variable supervisor_messages to an empty list.
-        """
-        self.supervisor_messages = []
-
-    def clear_supervisor_results_messages(self):
-        """
-        Sets the variable supervisor_result_messages to an empty list.
-        """
-        self.supervisor_result_messages = []
-
     def stop_following(self):
         """
         Set the variable follow to False to indicate that this car isn't following other.
         """
         self.follow = False
 
-    def start_following(self):
+    def start_following(self, message):
         """
         Sets the variable follow to True to indicate that this car has started following another car.
         """
+        self.set_following_car_message(message)
+        self.set_controller(follower_controller.follower_controller)
         self.follow = True
 
     def new_image(self):
@@ -345,43 +282,6 @@ class Car:
             if self.get_rect().colliderect(car.get_rect()):
                 return True
         return False
-
-    def supervisor_level(self, attack=False):
-        """
-        Function that emulates the functioning of the supervisor level of the T-intersection coordination algorithm in a
-        distributed way.
-        As the original supervisor level, check if a new car needs to follow and "old" car at the intersection, but it
-        works with messages (received and sent info).
-        :param attack: if true, all cars will be set default controller, driving at maximum speed.
-        """
-        new_cars_messages, old_cars_messages = self.separate_new_and_old_cars(self.get_supervisor_messages())
-        for new_car_message in new_cars_messages:
-            if not attack:
-                for i in range(len(old_cars_messages)):
-                    other_car_message = old_cars_messages[len(old_cars_messages) - (i + 1)]
-                    if new_car_message.cross_path(other_car_message):
-                        new_car_message.set_follow(True)
-                        following_car_message = Message()
-                        following_car_message.set_receiver(new_car_message.get_car_name())
-                        following_car_message.set_type("following")
-                        follower_car_message = Message()
-                        follower_car_message.set_receiver(other_car_message.get_car_name())
-                        follower_car_message.set_follower(new_car_message.get_car_name())
-                        follower_car_message.set_type("follower")
-                        self.supervisor_result_messages.append(following_car_message)
-                        self.supervisor_result_messages.append(follower_car_message)
-                        break
-                if not new_car_message.get_follow():
-                    following_car_message = Message()
-                    following_car_message.set_receiver(new_car_message.get_car_name())
-                    following_car_message.set_type("not_following")
-                    self.supervisor_result_messages.append(following_car_message)
-            else:
-                following_car_message = Message()
-                following_car_message.set_receiver(new_car_message.get_name())
-                following_car_message.set_type("not_following")
-                self.supervisor_result_messages.append(following_car_message)
-            old_cars_messages.append(new_car_message)
 
     def get_acceleration(self):
         """
@@ -452,13 +352,6 @@ class Car:
         self.actual_coordinates = (
             self.get_x_position(), new_y, self.get_direction(), self.get_lane())
 
-    def get_supervisor_result_messages(self):
-        """
-        Returns the list of result messages of the supervisor level.
-        :return: <list> messages result of the supervisor_level.
-        """
-        return self.supervisor_result_messages
-
     def get_followers(self):
         """
         Returns all the car that are following this car.
@@ -506,9 +399,6 @@ class Car:
         Sets the new direction of a car.
         :param new_direction: new direction of a car.
         """
-        self.set_direction_variation(self.get_direction_variation() + new_direction - self.get_direction())
-        if abs(self.direction_variation) >= 90.0:
-            new_direction = self.get_origin_direction() + 90 * self.direction_variation / abs(self.direction_variation)
         self.actual_coordinates = (
             self.get_x_position(), self.get_y_position(), new_direction, self.get_lane())
 
@@ -604,13 +494,6 @@ class Car:
         """
         return Message(self)
 
-    def get_supervisor_messages(self):
-        """
-        Get all the supervisor messages
-        :return:
-        """
-        return self.supervisor_messages
-
     def get_creation_time(self):
         """
         Getter for creation time.
@@ -630,7 +513,7 @@ class Car:
         Returns the name of the car that this car is following. If the name is -1, this car is not following another.
         :return: <int> name of the car that this one is following
         """
-        return self.get_following_car_message().car_name
+        return self.get_following_car_message().name
 
     def is_supervisor(self):
         """
@@ -659,34 +542,6 @@ class Car:
         :param car: new follower car.
         """
         self.follower_cars.append(car)
-
-    def add_supervisor_message(self, message):
-        """
-        Add a message with a car information to the list of messages that the supervisor level of a car uses for the
-        coordination
-        :param message: a message of a car with, at least, the information of the lane of the car, time it reached the
-          intersection, and if it has a following car (i.e. it's new at the intersection).
-        """
-        self.supervisor_messages.append(message)
-
-    @staticmethod
-    def separate_new_and_old_cars(car_messages_list):
-        """
-        Function to separate old from new cars. Return a tuple with 2 lists: one with new cars, one with old cars
-        ordered by creation time.
-        :param car_messages_list: <list> cars at the intersection.
-        :return: (<car_list>,<car_list>) Tuple of size 2 with two list: one with new cars, the other with old cars
-        ordered by creation time.
-        """
-        new_cars_messages = []
-        old_cars_messages = []
-        for car_message in car_messages_list:
-            if car_message.is_new():
-                new_cars_messages.append(car_message)
-            else:
-                old_cars_messages.append(car_message)
-        old_cars_messages.sort(key=lambda x: x.creation_time, reverse=False)
-        return new_cars_messages, old_cars_messages
 
     def get_car_length(self):
         """
@@ -759,13 +614,6 @@ class Car:
         """
         return self.intention
 
-    def get_direction_variation(self):
-        """
-        Returns the total variation of direction of a car
-        :return: <int> direction variation of a car
-        """
-        return self.direction_variation
-
     def get_virtual_x_position(self):
         """
         Returns the x position of the virtual caravan environment.
@@ -791,13 +639,6 @@ class Car:
         :param intention: new intention of the car
         """
         self.intention = intention
-
-    def before_intersection_bool(self):
-        """
-        Function to get the boolean of if the car has joined the intersection or not.
-        :return:
-        """
-        return self.before_intersection
 
     def get_caravan_depth(self):
         """
@@ -834,7 +675,6 @@ class Car:
         self.set_origin_x_position(initial_positions[self.get_lane()][0])
         self.set_origin_y_position(initial_positions[self.get_lane()][1])
         self.set_origin_direction(initial_positions[self.get_lane()][2])
-        self.set_direction_variation(0)
 
     def set_origin_x_position(self, new_x):
         """
@@ -860,9 +700,77 @@ class Car:
         self.initial_coordinates = (
             self.get_origin_x_position(), self.get_origin_y_position(), new_direction, self.get_lane())
 
-    def set_direction_variation(self, new_direction_variation):
+    def add_new_car(self, new_car_message):
         """
-        Sets the direction variation to a new value.
-        :param new_direction_variation: new vale of direction variation
+        Adds a car to the list of cars present at the intersection.
+        :return:
         """
-        self.direction_variation = new_direction_variation
+        if self.is_supervisor():
+            self.supervisor_level(new_car_message)
+        self.get_cars_at_intersection().append(Car(new_car_message.get_name(), lane=new_car_message.get_lane(),
+                                                   intention=new_car_message.get_intention()))
+
+    def delete_car(self, left_intersection_message):
+        """
+        Deletes a car from the list of cars at the intersection
+        :param left_intersection_message: message of the car that left the intersection
+        """
+        cars_at_intersection = self.get_cars_at_intersection()
+        for car in cars_at_intersection:
+            if car.get_name() == left_intersection_message.get_name():
+                cars_at_intersection.remove(car)
+
+    def get_cars_at_intersection(self):
+        """
+        Returns the list of cars present at the intersection
+        :return: list of cars
+        """
+        return self.cars_at_intersection
+
+    def set_cars_at_intersection(self, cars_at_intersection):
+        """
+        Sets the list of cars at intersection to be the new list.
+        :param cars_at_intersection: new list of cars at the intersection
+        """
+        self.cars_at_intersection = cars_at_intersection
+
+    def make_supervisor(self, supervisor_left_message):
+        """
+        Makes this car the supervisor of the intersection.
+        :param supervisor_left_message: message with the information needed for this car to be supervisor.
+        """
+        self.set_active_supervisory_level()
+        self.set_cars_at_intersection(supervisor_left_message.get_cars_at_intersection())
+
+    def get_new_messages(self):
+        return self.new_messages
+
+    def set_new_messages(self, new_messages_list):
+        self.new_messages = new_messages_list
+
+    def supervisor_level(self, new_car_message, attack=False):
+        """
+        Function that emulates the functioning of the supervisor level of the T-intersection coordination algorithm in a
+        distributed way.
+        As the original supervisor level, check if a new car needs to follow and "old" car at the intersection, but it
+        works with messages (received and sent info).
+        :param attack: if true, all cars will be set default controller, driving at maximum speed.
+        :param new_car_message: information of the new car at the intersection
+        :return
+        """
+        self.new_supervisor_name = new_car_message.get_name()
+        if not attack:
+            old_cars = self.get_cars_at_intersection()
+            old_cars.sort(key=lambda car: car.get_name(), reverse=True)
+            for old_car in old_cars:
+                if new_car_message.cross_path(old_car.get_lane(), old_car.get_intention()):
+                    new_car_message.set_follow(True)
+                    self.get_new_messages().append(FollowingCarMessage(old_car, new_car_message.get_name()))
+                    break
+
+    def get_new_supervisor_name(self):
+        """
+        Returns the name of the car that is the objective to be the new supervisor.
+        :return: <int> name of the car that will be the new supervisor.
+        """
+        return self.new_supervisor_name
