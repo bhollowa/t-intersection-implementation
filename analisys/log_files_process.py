@@ -62,7 +62,7 @@ def generate_collision_cars_from_file(collisions_file, all_cars):
                 collided_cars[counter].append(collision_cars[car_information["name"]])
         for car_information in collision_information["collision_initial_conditions"]:
             if car_information["following"] in collision_cars.keys():
-                collision_cars[car_information["name"]].start_following()
+                collision_cars[car_information["name"]].set_following(True)
                 collision_cars[car_information["name"]].set_following_car_message(
                     Message(collision_cars[car_information["following"]]))
             else:

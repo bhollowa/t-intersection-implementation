@@ -46,7 +46,7 @@ def simulate_collision(log):
                 cars.remove(car)
                 car.set_left_intersection_time()
                 for follower in car.get_followers():
-                    follower.stop_following()
+                    follower.set_following(False)
             screen.blit(car.rotated_image, car.screen_car)
             display_info_on_car(car, screen, font, "name", "following")
         show_caravan(cars, screen, font, collided_cars[0], screen.get_width())

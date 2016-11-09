@@ -27,7 +27,7 @@ def create_cars_from_collision_json(collision_json):
         if json_car["following"] in cars_dict:
             car = cars_dict[json_car["car_name"]]
             cars_dict[json_car["following"]].add_follower(car)
-            car.start_following()
+            car.set_following(True)
             car.set_controller(follower_controller)
     return cars_dict
 
@@ -100,7 +100,7 @@ def recreate_collision(collision_json, graphic):
             if not car.screen_car.colliderect(screen_rect):
                 cars.remove(car)
                 for follower in car.get_followers():
-                    follower.stop_following()
+                    follower.set_following(False)
                 continue
             car.update(*car.controller(car))
             if graphic:
