@@ -41,6 +41,9 @@ class Message(object):
         self.car = None
         self.follow = False
 
+    def __str__(self):
+        return self.__class__.__name__ + " From " + str(self.get_name()) + " depth " + str(self.get_caravan_depth())
+
     def virtual_distance(self):
         """
         Gets the virtual position of the car.
@@ -295,6 +298,14 @@ class NewCarMessage(Message):
     """
     Message used to inform all the other cars that a new car has arrived at the intersection.
     """
+    def __init__(self, car):
+        """
+        Initializer for this message. The only new information needed is the cars at the intersection.
+        :param car: supervisor leaving the intersection.
+        """
+        super(self.__class__, self).__init__(car)
+        self.following_car_message = car.get_following_car_message()
+
     def process(self, car):
         """
         Process the message. Creates a new car with the information present at this message and add it to the list of
@@ -302,6 +313,9 @@ class NewCarMessage(Message):
         :param car: car to add a new car to the list of cars present at the intersection.
         """
         car.add_new_car(self)
+
+    def get_following_car_message(self):
+        return self.following_car_message
 
 
 class LeftIntersectionMessage(Message):
@@ -335,6 +349,7 @@ class SupervisorLeftIntersectionMessage(Message):
         Process the message. Makes the car the new supervisor and gives it all the information needs to work correctly.
         :param car: new supervisor.
         """
+
         if car.get_name() == self.get_new_supervisor_name():
             car.make_supervisor(self)
 
@@ -366,8 +381,7 @@ class FollowingCarMessage(Message):
         Process the message. Makes the car that this message is for
         :param car: car to update information
         """
-        if car.get_name() == self.get_following_car_name():
-            car.start_following(self)
+        car.start_following(self)
 
     def get_following_car_name(self):
         return self.following_car_name

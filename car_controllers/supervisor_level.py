@@ -25,9 +25,9 @@ def supervisor_level(new_cars, old_cars, attack=False):
                     old_car.add_follower(new_car)
                     new_car.set_caravan_depth(old_car.get_caravan_depth())
                     new_car.set_controller(follower_controller)
-                    new_car.start_following()
+                    new_car.set_following(True)
                     break
-            if not new_car.is_following():
+            if not new_car.get_following():
                 new_car.set_controller(default_controller)
         else:
             new_car.set_controller(default_controller)

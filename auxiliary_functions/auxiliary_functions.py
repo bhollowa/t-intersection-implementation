@@ -50,7 +50,7 @@ def check_close_application(user_input):
 
 def continue_simulation(user_input):
     for event in user_input:
-        if event.type == pygame.KEYUP:
+        if event.type == pygame.KEYUP and event.key is not K_ESCAPE:
             return False
     return True
 
@@ -88,19 +88,15 @@ def random_car(name, min_speed, max_speed, **kwargs):
         if lane == 0:
             if random_intention == 0:
                 intention = "r"
-            elif random_intention == 1:
-                intention = "s"
         elif lane == 1:
             if random_intention == 0:
                 intention = "r"
-            elif random_intention == 1:
+            else:
                 intention = "l"
         else:
-            if random_intention == 0:
-                intention = "s"
-            elif random_intention == 1:
+            if random_intention == 1:
                 intention = "l"
-    return Car(str(name), pos_x, pos_y, direction=direction, lane=lane, absolute_speed=initial_speed,
+    return Car(name, pos_x, pos_y, direction=direction, lane=lane, absolute_speed=initial_speed,
                intention=intention)
 
 

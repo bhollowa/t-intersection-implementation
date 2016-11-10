@@ -56,7 +56,7 @@ class Car(object):
         # to the others
         self.cars_at_intersection = []
         self.new_messages = []
-        self.follow = False  # True if the car is following some other car
+        self.following = False  # True if the car is following some other car
         self.active_supervisory = False
         self.new_car = True
         self.control_law_value = 0
@@ -70,7 +70,9 @@ class Car(object):
         Example: "Car: 48 Speed: 19.975" else.
         :return: String representation of the car.
         """
-        return "Car " + str(self.get_name()) + " lane " + str(self.get_lane()) + " intention " + self.get_intention()
+        return "Car " + str(self.get_name()) + " lane " + str(self.get_lane()) + " intention " + self.get_intention() \
+               + " depth " + str(self.get_caravan_depth()) + " following " \
+               + str(self.get_following_car_message().get_name())
 
     def to_json(self):
         """
@@ -246,19 +248,23 @@ class Car(object):
 
         return virtual_distance_value
 
-    def stop_following(self):
-        """
-        Set the variable follow to False to indicate that this car isn't following other.
-        """
-        self.follow = False
-
     def start_following(self, message):
         """
         Sets the variable follow to True to indicate that this car has started following another car.
         """
-        self.set_following_car_message(message)
-        self.set_controller(follower_controller.follower_controller)
-        self.follow = True
+        if self.get_name() == message.get_following_car_name():
+            self.set_following_car_message(message)
+            self.set_controller(follower_controller.follower_controller)
+            self.set_following(True)
+        for car in self.get_cars_at_intersection():
+            if car.get_name() == message.get_following_car_name():
+                car.set_following_car_message(message)
+                car.set_controller(follower_controller.follower_controller)
+                car.set_following(True)
+                break
+
+    def set_following(self, following):
+        self.following = following
 
     def new_image(self):
         """
@@ -513,7 +519,7 @@ class Car(object):
         Returns the name of the car that this car is following. If the name is -1, this car is not following another.
         :return: <int> name of the car that this one is following
         """
-        return self.get_following_car_message().name
+        return self.get_following_car_message().get_name()
 
     def is_supervisor(self):
         """
@@ -529,12 +535,12 @@ class Car(object):
         """
         return self.new_car
 
-    def is_following(self):
+    def get_following(self):
         """
         Returns the follow variable.
         :return: True if the car is following other. False otherwise.
         """
-        return self.follow
+        return self.following
 
     def add_follower(self, car):
         """
@@ -646,7 +652,7 @@ class Car(object):
         cases it's the following car depth plus 1.
         :return: <int> depth of the car at the caravan.
         """
-        if self.is_following():
+        if self.get_following():
             return self.get_following_car_message().get_caravan_depth() + 1
         return 0
 
@@ -705,10 +711,12 @@ class Car(object):
         Adds a car to the list of cars present at the intersection.
         :return:
         """
+        new_car = Car(new_car_message.get_name(), lane=new_car_message.get_lane(),
+                      intention=new_car_message.get_intention())
         if self.is_supervisor():
-            self.supervisor_level(new_car_message)
-        self.get_cars_at_intersection().append(Car(new_car_message.get_name(), lane=new_car_message.get_lane(),
-                                                   intention=new_car_message.get_intention()))
+            self.supervisor_level(new_car)
+        else:
+            self.get_cars_at_intersection().append(new_car)
 
     def delete_car(self, left_intersection_message):
         """
@@ -716,9 +724,29 @@ class Car(object):
         :param left_intersection_message: message of the car that left the intersection
         """
         cars_at_intersection = self.get_cars_at_intersection()
+        cars_at_intersection.sort(key=lambda car: car.get_name())
+        cars_to_remove = []
+        # update car information
         for car in cars_at_intersection:
+            following_car_name = car.get_following_car_message().get_name()
             if car.get_name() == left_intersection_message.get_name():
-                cars_at_intersection.remove(car)
+                cars_to_remove.append(car)
+            if left_intersection_message.get_name() == following_car_name:
+                car.set_controller(default_controller.default_controller)
+                car.set_following(False)
+        # remove cars that left
+        for car in cars_to_remove:
+            cars_at_intersection.remove(car)
+        # update following car information
+        cars_at_intersection_dict = {car.get_name(): car for car in cars_at_intersection}
+        for car in cars_at_intersection:
+            following_car_name = car.get_following_car_message().get_name()
+            if following_car_name in cars_at_intersection_dict.keys():
+                car.set_following_car_message(InfoMessage(cars_at_intersection_dict[following_car_name]))
+
+        if left_intersection_message.get_name() == self.get_following_car_message().get_name():
+            self.set_controller(default_controller.default_controller)
+            self.set_following(False)
 
     def get_cars_at_intersection(self):
         """
@@ -748,25 +776,27 @@ class Car(object):
     def set_new_messages(self, new_messages_list):
         self.new_messages = new_messages_list
 
-    def supervisor_level(self, new_car_message, attack=False):
+    def supervisor_level(self, new_car, attack=False):
         """
         Function that emulates the functioning of the supervisor level of the T-intersection coordination algorithm in a
         distributed way.
         As the original supervisor level, check if a new car needs to follow and "old" car at the intersection, but it
         works with messages (received and sent info).
         :param attack: if true, all cars will be set default controller, driving at maximum speed.
-        :param new_car_message: information of the new car at the intersection
+        :param new_car: information of the new car at the intersection
         :return
         """
-        self.new_supervisor_name = new_car_message.get_name()
+        self.new_supervisor_name = new_car.get_name()
         if not attack:
             old_cars = self.get_cars_at_intersection()
             old_cars.sort(key=lambda car: car.get_name(), reverse=True)
+            old_cars.sort(key=lambda car: car.get_caravan_depth(), reverse=True)
             for old_car in old_cars:
-                if new_car_message.cross_path(old_car.get_lane(), old_car.get_intention()):
-                    new_car_message.set_follow(True)
-                    self.get_new_messages().append(FollowingCarMessage(old_car, new_car_message.get_name()))
+                if new_car.cross_path(old_car.get_lane(), old_car.get_intention()):
+                    new_car.start_following(FollowingCarMessage(old_car, new_car.get_name()))
+                    self.get_new_messages().append(FollowingCarMessage(old_car, new_car.get_name()))
                     break
+            self.get_cars_at_intersection().append(new_car)
 
     def get_new_supervisor_name(self):
         """

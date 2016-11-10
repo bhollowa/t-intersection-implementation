@@ -34,3 +34,4 @@ def see_collision(log):
         pygame.display.update(screen.get_rect())
         if not continue_simulation(pygame.event.get()):
             actual_collision += 1
+see_collision("_test4")
