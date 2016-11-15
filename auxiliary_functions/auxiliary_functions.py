@@ -229,7 +229,7 @@ def supervisor(car_list):
     :return: <boolean> True if there is a car with active supervisor level. False otherwise.
     """
     for car in car_list:
-        if car.is_supervisor():
+        if car.get_active_supervisor():
             return True
     return False
 
@@ -283,12 +283,12 @@ def show_caravan(cars, screen, letter, collided_cars, screen_width):
         if collided_cars is not None:
             if car[0].get_name() == collided_cars[0].get_name() or car[0].get_name() == collided_cars[1].get_name():
                 screen.blit(collided_car_surface, car[1])
-            elif car[0].is_supervisor():
+            elif car[0].get_active_supervisor():
                 screen.blit(leader_car_surface, car[1])
             else:
                 screen.blit(car_surface, car[1])
         else:
-            if car[0].is_supervisor():
+            if car[0].get_active_supervisor():
                 screen.blit(leader_car_surface, car[1])
             else:
                 screen.blit(car_surface, car[1])

@@ -481,11 +481,12 @@ class Car(object):
         else:
             self.creation_time = creation_time
 
-    def set_active_supervisory_level(self):
+    def set_active_supervisory(self, active):
         """
-        Sets the active_supervisory to True
+        Sets the active_supervisory to active.
+        :param active: True to set this car as the supervisor. False otherwise.
         """
-        self.active_supervisory = True
+        self.active_supervisory = active
 
     def set_old(self):
         """
@@ -521,7 +522,7 @@ class Car(object):
         """
         return self.get_following_car_message().get_name()
 
-    def is_supervisor(self):
+    def get_active_supervisor(self):
         """
         Check if this has it's supervisor level active.
         :return: <boolean>True if this car is running the supervisro level. False otherwise.
@@ -713,10 +714,9 @@ class Car(object):
         """
         new_car = Car(new_car_message.get_name(), lane=new_car_message.get_lane(),
                       intention=new_car_message.get_intention())
-        if self.is_supervisor():
+        if self.get_active_supervisor():
             self.supervisor_level(new_car)
-        else:
-            self.get_cars_at_intersection().append(new_car)
+        self.get_cars_at_intersection().append(new_car)
 
     def delete_car(self, left_intersection_message):
         """
@@ -767,7 +767,7 @@ class Car(object):
         Makes this car the supervisor of the intersection.
         :param supervisor_left_message: message with the information needed for this car to be supervisor.
         """
-        self.set_active_supervisory_level()
+        self.set_active_supervisory(True)
         self.set_cars_at_intersection(supervisor_left_message.get_cars_at_intersection())
 
     def get_new_messages(self):
@@ -796,7 +796,6 @@ class Car(object):
                     new_car.start_following(FollowingCarMessage(old_car, new_car.get_name()))
                     self.get_new_messages().append(FollowingCarMessage(old_car, new_car.get_name()))
                     break
-            self.get_cars_at_intersection().append(new_car)
 
     def get_new_supervisor_name(self):
         """

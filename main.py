@@ -15,7 +15,6 @@ def main_simulation(graphic_environment, limit, *args, **kwargs):
     show_virtual_caravan = "show_caravan" in args
     if log:
         collision_log, left_intersection_log, total_cars_log = create_logs(kwargs["log"])
-        left_intersection_cars = []
         collision_message = ""
     cars = []
     iteration = True
@@ -70,18 +69,15 @@ def main_simulation(graphic_environment, limit, *args, **kwargs):
                         new_car.new_image()
                         lanes_waiting_time[i] = (np.random.exponential(1.0 / rate), 0)
                         if len(cars) == 0:
-                            new_car.set_active_supervisory_level()
+                            new_car.set_active_supervisory(True)
                         cars.append(new_car)
                         new_messages.append(NewCarMessage(new_car))
                         car_name_counter += 1
                     else:
                         not_created_vehicles += 1
-            # if not distributed:
-            #     new_cars, old_cars = separate_new_and_old_cars(cars)
-            #     if len(new_cars) > 0:
-            #         supervisor_level(new_cars, old_cars, attack_supervisory)
             left_intersection_cars = []
             left_intersection_cars_log = []
+            messages.sort(key=lambda not_sorted_message: not_sorted_message.get_value(), reverse=True)
             for car in cars:
                 for message in messages:
                     message.process(car)
@@ -92,11 +88,9 @@ def main_simulation(graphic_environment, limit, *args, **kwargs):
                 if not car.screen_car.colliderect(full_intersection_rect):
                     left_intersection_cars.append(car)
                     car.set_left_intersection_time()
-                    if car.is_supervisor():
-                        new_messages.insert(0, SupervisorLeftIntersectionMessage(car))
                     new_messages.append(LeftIntersectionMessage(car))
-                    for follower in car.get_followers():
-                        follower.set_following(False)
+                    if car.get_active_supervisor():
+                        new_messages.insert(0,SupervisorLeftIntersectionMessage(car))
                     if log:
                         left_intersection_cars_log.append(car)
                     continue
@@ -178,5 +172,5 @@ def print_percentages(times_tuple):
 
 # threading.Thread(target=main_simulation, args=(False, car_limit, "distributed")).start()
 # threading.Thread(target=main_simulation, args=(False, car_limit, "distributed")).start()
-car_limit = 10000
-main_simulation(True, car_limit, "show_caravan", "wait")
+car_limit = 100000
+main_simulation(False, car_limit, log="_test4")

@@ -8,6 +8,8 @@ class Message(object):
     (a negative one).
     The message can give the distance to the center of the car from it was created (based on the information given).
     """
+    value_dict = {"SupervisorLeftIntersectionMessage": 3, "LeftIntersectionMessage": 2, "NewCarMessage": 1,
+                  "InfoMessage": 0, "FollowingCarMessage": 0, "Message": 0}
 
     def __init__(self, car=None):
         """
@@ -40,6 +42,7 @@ class Message(object):
         self.follower = None
         self.car = None
         self.follow = False
+        self.value = self.value_dict[self.__class__.__name__]
 
     def __str__(self):
         return self.__class__.__name__ + " From " + str(self.get_name()) + " depth " + str(self.get_caravan_depth())
@@ -280,6 +283,12 @@ class Message(object):
         return all_tables[(self_lane - other_car_lane) % 4][lane_to_int_dict[self_intention]][
             lane_to_int_dict[other_car_intention]]
 
+    def process(self, car):
+        pass
+
+    def get_value(self):
+        return self.value
+
 
 class InfoMessage(Message):
     """
@@ -290,6 +299,7 @@ class InfoMessage(Message):
         Process the message. Sets the old message to be this new one, so the information of the car is updated.
         :param car: car whose following car information will be updated.
         """
+
         if car.get_following_car_message().get_name() == self.get_name():
             car.set_following_car_message(self)
 
@@ -312,6 +322,7 @@ class NewCarMessage(Message):
         cars present at the intersection.
         :param car: car to add a new car to the list of cars present at the intersection.
         """
+        super(self.__class__, self).process(car)
         car.add_new_car(self)
 
     def get_following_car_message(self):
@@ -328,6 +339,7 @@ class LeftIntersectionMessage(Message):
         intersection.
         :param car: car to update information
         """
+        super(self.__class__, self).process(car)
         car.delete_car(self)
 
 
@@ -341,7 +353,11 @@ class SupervisorLeftIntersectionMessage(Message):
         :param car: supervisor leaving the intersection.
         """
         super(self.__class__, self).__init__(car)
-        self.cars_at_intersection = car.get_cars_at_intersection()
+        cars_at_intersection = car.get_cars_at_intersection()
+        for car_at_intersection in cars_at_intersection:
+            if car_at_intersection.get_name() == car.get_name():
+                cars_at_intersection.remove(car_at_intersection)
+        self.cars_at_intersection = cars_at_intersection
         self.new_supervisor_name = car.get_new_supervisor_name()
 
     def process(self, car):
@@ -349,7 +365,7 @@ class SupervisorLeftIntersectionMessage(Message):
         Process the message. Makes the car the new supervisor and gives it all the information needs to work correctly.
         :param car: new supervisor.
         """
-
+        super(self.__class__, self).process(car)
         if car.get_name() == self.get_new_supervisor_name():
             car.make_supervisor(self)
 
@@ -381,6 +397,7 @@ class FollowingCarMessage(Message):
         Process the message. Makes the car that this message is for
         :param car: car to update information
         """
+        super(self.__class__, self).process(car)
         car.start_following(self)
 
     def get_following_car_name(self):
