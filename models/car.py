@@ -97,6 +97,7 @@ class Car(object):
         return_string += ',"y_coordinate":' + str(self.get_origin_y_position())
         return_string += ',"direction":' + str(self.get_origin_direction())
         return_string += '}'
+        return_string += ',"supervisor":' + str(self.get_active_supervisor())
         return_string += '}'
         return return_string
 
