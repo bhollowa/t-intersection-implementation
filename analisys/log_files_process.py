@@ -16,22 +16,19 @@ def generate_left_intersection_cars_from_file(left_intersection_file):
     """
     all_cars = {}
     for line in left_intersection_file:
-        try:
-            cars_information = JSONDecoder().decode(line[:len(line) - 2])['message']
-            for car_information in cars_information:
-                all_cars[car_information["name"]] = Car(int(car_information["name"]),
-                                                        pos_x=car_information["actual_coordinates"]["x_coordinate"],
-                                                        pos_y=car_information["actual_coordinates"]["y_coordinate"],
-                                                        direction=car_information["actual_coordinates"]["direction"],
-                                                        lane=car_information["lane"],
-                                                        intention=car_information["intention"],
-                                                        creation_time=car_information["creation_time"],
-                                                        left_intersection_time=car_information["left_intersection_time"])
-                if car_information["following"] in all_cars.keys():
-                    all_cars[car_information["name"]].set_following_car_message(
-                        Message(all_cars[car_information["following"]]))
-        except:
-            print line
+        cars_information = JSONDecoder().decode(line[:len(line) - 2])['message']
+        for car_information in cars_information:
+            all_cars[car_information["name"]] = Car(int(car_information["name"]),
+                                                    pos_x=car_information["actual_coordinates"]["x_coordinate"],
+                                                    pos_y=car_information["actual_coordinates"]["y_coordinate"],
+                                                    direction=car_information["actual_coordinates"]["direction"],
+                                                    lane=car_information["lane"],
+                                                    intention=car_information["intention"],
+                                                    creation_time=car_information["creation_time"],
+                                                    left_intersection_time=car_information["left_intersection_time"])
+            if car_information["following"] in all_cars.keys():
+                all_cars[car_information["name"]].set_following_car_message(
+                    Message(all_cars[car_information["following"]]))
     return all_cars
 
 
@@ -48,31 +45,29 @@ def generate_collision_cars_from_file(collisions_file, all_cars):
     collided_cars = {}
     counter = 0
     for line in collisions_file:
-        # try:
-            collision_information = JSONDecoder().decode(line[:len(line) - 2])['message']
-            collided_cars_information = collision_information["collided_cars"]
-            collisions_cars[counter] = {}
-            collision_cars = collisions_cars[counter]
-            collided_cars[counter] = []
-            for car_information in collision_information["collision_initial_conditions"]:
-                collision_cars[car_information["name"]] = Car(car_information["name"],
-                                                              pos_x=car_information["actual_coordinates"]["x_coordinate"],
-                                                              pos_y=car_information["actual_coordinates"]["y_coordinate"],
-                                                              direction=car_information["actual_coordinates"]["direction"],
-                                                              lane=car_information["lane"],
-                                                              intention=car_information["intention"],
-                                                              creation_time=car_information["creation_time"])
-                if collision_cars[car_information["name"]].get_name() == collided_cars_information[0]["name"] or collision_cars[car_information["name"]].get_name() == collided_cars_information[1]["name"]:
-                    collided_cars[counter].append(collision_cars[car_information["name"]])
-            for car_information in collision_information["collision_initial_conditions"]:
-                if car_information["following"] in collision_cars.keys():
-                    collision_cars[car_information["name"]].set_following(True)
-                    collision_cars[car_information["name"]].set_following_car_message(
-                        Message(collision_cars[car_information["following"]]))
-                elif car_information["following"] is not -1:
-                    collisions_cars[counter][car_information["name"]].set_following_car_message(
-                        Message(all_cars[car_information["following"]]))
-            counter += 1
-        # except:
-        #     print line
+        collision_information = JSONDecoder().decode(line[:len(line) - 2])['message']
+        collided_cars_information = collision_information["collided_cars"]
+        collisions_cars[counter] = {}
+        collision_cars = collisions_cars[counter]
+        collided_cars[counter] = []
+        for car_information in collision_information["collision_initial_conditions"]:
+            collision_cars[car_information["name"]] = Car(car_information["name"],
+                                                          pos_x=car_information["actual_coordinates"]["x_coordinate"],
+                                                          pos_y=car_information["actual_coordinates"]["y_coordinate"],
+                                                          direction=car_information["actual_coordinates"]["direction"],
+                                                          lane=car_information["lane"],
+                                                          intention=car_information["intention"],
+                                                          creation_time=car_information["creation_time"])
+            if collision_cars[car_information["name"]].get_name() == collided_cars_information[0]["name"] or \
+                            collision_cars[car_information["name"]].get_name() == collided_cars_information[1]["name"]:
+                collided_cars[counter].append(collision_cars[car_information["name"]])
+        for car_information in collision_information["collision_initial_conditions"]:
+            if car_information["following"] in collision_cars.keys():
+                collision_cars[car_information["name"]].set_following(True)
+                collision_cars[car_information["name"]].set_following_car_message(
+                    Message(collision_cars[car_information["following"]]))
+            elif car_information["following"] is not -1:
+                collisions_cars[counter][car_information["name"]].set_following_car_message(
+                    Message(all_cars[car_information["following"]]))
+        counter += 1
     return collisions_cars, collided_cars
