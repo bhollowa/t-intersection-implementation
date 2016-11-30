@@ -309,8 +309,9 @@ def init_graphic_environment(screen_width, screen_height):
     """
     os.environ['SDL_VIDEO_WINDOW_POS'] = "%d,%d" % (0, 0)
     images_directory = os.path.dirname(os.path.abspath(__file__)) + "/../images/"
-    screen = pygame.display.set_mode((screen_width, screen_height))
     intersection_background = pygame.image.load(images_directory + "background.jpg")
+    pygame.display.set_icon(intersection_background)
+    screen = pygame.display.set_mode((screen_width, screen_height))
     background = pygame.Surface(screen.get_size())
     background = background.convert(background)
     background.fill((250, 250, 250))
