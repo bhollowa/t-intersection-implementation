@@ -23,7 +23,7 @@ def generate_left_intersection_cars_from_file(left_intersection_file):
                                                     pos_y=car_information["actual_coordinates"]["y_coordinate"],
                                                     direction=car_information["actual_coordinates"]["direction"],
                                                     lane=car_information["lane"],
-                                                    intention=car_information["intention"],
+                                                    intention=car_information["intention"].encode('ascii', 'ignore'),
                                                     creation_time=car_information["creation_time"],
                                                     left_intersection_time=car_information["left_intersection_time"])
             if car_information["following"] in all_cars.keys():
@@ -56,10 +56,11 @@ def generate_collision_cars_from_file(collisions_file, all_cars):
                                                           pos_y=car_information["actual_coordinates"]["y_coordinate"],
                                                           direction=car_information["actual_coordinates"]["direction"],
                                                           lane=car_information["lane"],
+                                                          absolute_speed=car_information["speed"],
                                                           intention=car_information["intention"],
                                                           creation_time=car_information["creation_time"])
             if collision_cars[car_information["name"]].get_name() == collided_cars_information[0]["name"] or \
-                            collision_cars[car_information["name"]].get_name() == collided_cars_information[1]["name"]:
+               collision_cars[car_information["name"]].get_name() == collided_cars_information[1]["name"]:
                 collided_cars[counter].append(collision_cars[car_information["name"]])
         for car_information in collision_information["collision_initial_conditions"]:
             if car_information["following"] in collision_cars.keys():
@@ -71,3 +72,29 @@ def generate_collision_cars_from_file(collisions_file, all_cars):
                     Message(all_cars[car_information["following"]]))
         counter += 1
     return collisions_cars, collided_cars
+
+
+def generate_coordination_info_from_file(coordination_file):
+    """
+    Generates the cars that were present when a car was created. Used for collision simulation purposes.
+    :param coordination_file: file with the json information.
+    :return: dict with list of car. The key is the car that was created.
+    """
+    coordination_info = {}
+    for line in coordination_file:
+        try:
+            coordination = JSONDecoder().decode(line[:len(line) - 2])['message']
+            coordination_info[coordination["coordinated_car"]] = []
+            for car_information in coordination["car_order"]:
+                car = Car(car_information["name"], pos_x=car_information["actual_coordinates"]["x_coordinate"],
+                          pos_y=car_information["actual_coordinates"]["y_coordinate"],
+                          absolute_speed=car_information["speed"],
+                          direction=car_information["actual_coordinates"]["direction"], lane=car_information["lane"],
+                          intention=car_information["intention"], creation_time=car_information["creation_time"])
+                car.set_origin_coordinates(car.get_lane())
+                car.set_registered_caravan_depth(car_information["actual_caravan_depth"])
+                car.set_following(True)
+                coordination_info[coordination["coordinated_car"]].append(car)
+        except:
+            print line
+    return coordination_info
