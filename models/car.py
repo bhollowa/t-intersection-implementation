@@ -37,10 +37,7 @@ class Car(object):
         :param controller: object which controls the speed of the car.
         """
         self.initial_speed = absolute_speed  # initial speed of the car when it appeared in the simulation.
-        if creation_time is None:
-            self.creation_time = time()
-        else:
-            self.creation_time = creation_time
+        self.creation_time = creation_time
         self.left_intersection_time = left_intersection_time
         self.controller = controller
         self.name = name
@@ -62,6 +59,19 @@ class Car(object):
         self.control_law_value = 0
         self.last_virtual_distance = 0
         self.new_supervisor_name = -1
+        self.log_messages = []
+        self.registered_caravan_depth = 0
+
+    def __eq__(self, other):
+        """
+        compares two cars. For simplicity, two cars are the same if they share the same name
+        :param other: other car
+        :return: <boolean>
+        """
+        if isinstance(other, type(self)):
+            if other.get_name() == self.get_name():
+                return True
+        return False
 
     def __str__(self):
         """
@@ -72,7 +82,8 @@ class Car(object):
         """
         return "Car " + str(self.get_name()) + " lane " + str(self.get_lane()) + " intention " + self.get_intention() \
                + " depth " + str(self.get_caravan_depth()) + " following " \
-               + str(self.get_following_car_message().get_name())
+               + str(self.get_following_car_message().get_name()) + " supervisor " + str(self.get_active_supervisor()) \
+               + " creation time " + str(self.get_creation_time())
 
     def to_json(self):
         """
@@ -97,7 +108,8 @@ class Car(object):
         return_string += ',"y_coordinate":' + str(self.get_origin_y_position())
         return_string += ',"direction":' + str(self.get_origin_direction())
         return_string += '}'
-        return_string += ',"supervisor":' + str(self.get_active_supervisor())
+        return_string += ',"supervisor":true' if self.get_active_supervisor() else ',"supervisor":false'
+        return_string += ',"actual_caravan_depth":' + str(self.get_caravan_depth())
         return_string += '}'
         return return_string
 
@@ -207,9 +219,9 @@ class Car(object):
         right_turn_radio = path_width / 4.0
         left_turn_radio = 3 * path_width / 4.0
         initial_straight_section = conflict_zone_radio - path_width / 2.0
-        if self.get_intention() is "s":
+        if self.get_intention() == "s":
             virtual_distance_value = self.get_virtual_x_position()
-        elif self.get_intention() is "r":
+        elif self.get_intention() == "r":
             if self.get_virtual_x_position() <= initial_straight_section:  # Calculate real virtual distance
                 virtual_distance_value = self.get_virtual_x_position()
             elif self.get_virtual_y_position() > -right_turn_radio:
@@ -264,9 +276,6 @@ class Car(object):
                 car.set_following(True)
                 break
 
-    def set_following(self, following):
-        self.following = following
-
     def new_image(self):
         """
         Creates the image representation of a car, with his rotated image and his screen representation (with the rect).
@@ -289,6 +298,111 @@ class Car(object):
             if self.get_rect().colliderect(car.get_rect()):
                 return True
         return False
+
+    def supervisor_level(self, new_car, attack=False):
+        """
+        Function that emulates the functioning of the supervisor level of the T-intersection coordination algorithm in a
+        distributed way.
+        As the original supervisor level, check if a new car needs to follow and "old" car at the intersection, but it
+        works with messages (received and sent info).
+        :param attack: if true, all cars will be set default controller, driving at maximum speed.
+        :param new_car: information of the new car at the intersection
+        :return
+        """
+        log_string = {"coordinated_car": new_car}
+        self.new_supervisor_name = new_car.get_name()
+        if not attack:
+            old_cars = self.get_cars_at_intersection()
+            old_cars.sort(key=lambda car: car.get_name(), reverse=True)
+            old_cars.sort(key=lambda car: car.get_caravan_depth(), reverse=True)
+            log_string["old_cars"] = old_cars
+            for old_car in old_cars:
+                if new_car.cross_path(old_car.get_lane(), old_car.get_intention()):
+                    log_string["selected_car"] = old_car
+                    self.get_log_messages().append(log_string)
+                    new_car.start_following(FollowingCarMessage(old_car, new_car.get_name()))
+                    self.get_new_messages().append(FollowingCarMessage(old_car, new_car.get_name()))
+                    break
+
+    def reset(self):
+        """
+        Sets all the attributes of the car as if it just arrived at the intersection.
+        """
+        initial_positions = [(435, 760, 0, 0), (760, 345, 90, 1), (345, 10, 180, 2), (10, 435, 270, 3)]
+        self.set_x_position(initial_positions[self.get_lane()][0])
+        self.set_y_position(initial_positions[self.get_lane()][1])
+        self.set_direction(initial_positions[self.get_lane()][2])
+        self.set_origin_coordinates(self.lane)
+
+    def add_new_car(self, new_car_message):
+        """
+        Adds a car to the list of cars present at the intersection.
+        :return:
+        """
+        new_car = Car(new_car_message.get_name(), lane=new_car_message.get_lane(),
+                      intention=new_car_message.get_intention(), creation_time=new_car_message.get_creation_time())
+        if self.get_active_supervisor():
+            self.supervisor_level(new_car)
+        self.get_cars_at_intersection().append(new_car)
+
+    def delete_car(self, left_intersection_message):
+        """
+        Deletes a car from the list of cars at the intersection
+        :param left_intersection_message: message of the car that left the intersection
+        """
+        cars_at_intersection = self.get_cars_at_intersection()
+        cars_at_intersection.sort(key=lambda car_at_intersection: car_at_intersection.get_name())
+        cars_to_remove = []
+        # update car information
+        for car in cars_at_intersection:
+            following_car_name = car.get_following_car_message().get_name()
+            if car.get_name() == left_intersection_message.get_name():
+                cars_to_remove.append(car)
+            if left_intersection_message.get_name() == following_car_name:
+                car.set_controller(default_controller.default_controller)
+                car.set_following(False)
+        # remove cars that left
+        for car in cars_to_remove:
+            cars_at_intersection.remove(car)
+        # update following car information
+        cars_at_intersection_dict = {car.get_name(): car for car in cars_at_intersection}
+        for car in cars_at_intersection:
+            following_car_name = car.get_following_car_message().get_name()
+            if following_car_name in cars_at_intersection_dict.keys():
+                car.set_following_car_message(InfoMessage(cars_at_intersection_dict[following_car_name]))
+
+        if left_intersection_message.get_name() == self.get_following_car_message().get_name():
+            self.set_controller(default_controller.default_controller)
+            self.set_following(False)
+
+    def make_supervisor(self, supervisor_left_message):
+        """
+        Makes this car the supervisor of the intersection.
+        :param supervisor_left_message: message with the information needed for this car to be supervisor.
+        """
+        self.set_active_supervisory(True)
+        self.set_cars_at_intersection(supervisor_left_message.get_cars_at_intersection())
+
+    def is_new(self):
+        """
+        Function to check if this car is new in the intersection.
+        :return: <boolean> True if the car is new (and haven't been assigned a following car). False otherwise.
+        """
+        return self.new_car
+
+    def add_follower(self, car):
+        """
+        Adds a follower to the list of followers of the car.
+        :param car: new follower car.
+        """
+        self.follower_cars.append(car)
+
+    def set_following(self, following):
+        """
+        Sets the following parameter.
+        :param following: <boolean>
+        """
+        self.following = following
 
     def get_acceleration(self):
         """
@@ -466,11 +580,12 @@ class Car(object):
         self.actual_coordinates = (
             self.actual_coordinates[0], self.actual_coordinates[1], self.actual_coordinates[2], new_lane)
 
-    def set_left_intersection_time(self):
+    def set_left_intersection_time(self, left_intersection_time):
         """
         Set the left_intersection_time to this time. Time stored in seconds.
+        :param left_intersection_time: <int> number of the counter.
         """
-        self.left_intersection_time = time()
+        self.left_intersection_time = left_intersection_time
 
     def set_creation_time(self, creation_time=None):
         """
@@ -530,26 +645,12 @@ class Car(object):
         """
         return self.active_supervisory
 
-    def is_new(self):
-        """
-        Function to check if this car is new in the intersection.
-        :return: <boolean> True if the car is new (and haven't been assigned a following car). False otherwise.
-        """
-        return self.new_car
-
     def get_following(self):
         """
         Returns the follow variable.
         :return: True if the car is following other. False otherwise.
         """
         return self.following
-
-    def add_follower(self, car):
-        """
-        Adds a follower to the list of followers of the car.
-        :param car: new follower car.
-        """
-        self.follower_cars.append(car)
 
     def get_car_length(self):
         """
@@ -672,17 +773,15 @@ class Car(object):
         """
         return self.initial_speed
 
-    def reset(self):
+    def set_origin_coordinates(self, lane):
         """
-        Sets all the attributes of the car as if it just arrived at the intersection.
+        Sets the original coordinates of a car by it's lane.
+        :param lane: lane at which the car was created
         """
         initial_positions = [(435, 760, 0, 0), (760, 345, 90, 1), (345, 10, 180, 2), (10, 435, 270, 3)]
-        self.set_x_position(initial_positions[self.get_lane()][0])
-        self.set_y_position(initial_positions[self.get_lane()][1])
-        self.set_direction(initial_positions[self.get_lane()][2])
-        self.set_origin_x_position(initial_positions[self.get_lane()][0])
-        self.set_origin_y_position(initial_positions[self.get_lane()][1])
-        self.set_origin_direction(initial_positions[self.get_lane()][2])
+        self.set_origin_x_position(initial_positions[lane][0])
+        self.set_origin_y_position(initial_positions[lane][1])
+        self.set_origin_direction(initial_positions[lane][2])
 
     def set_origin_x_position(self, new_x):
         """
@@ -708,47 +807,6 @@ class Car(object):
         self.initial_coordinates = (
             self.get_origin_x_position(), self.get_origin_y_position(), new_direction, self.get_lane())
 
-    def add_new_car(self, new_car_message):
-        """
-        Adds a car to the list of cars present at the intersection.
-        :return:
-        """
-        new_car = Car(new_car_message.get_name(), lane=new_car_message.get_lane(),
-                      intention=new_car_message.get_intention())
-        if self.get_active_supervisor():
-            self.supervisor_level(new_car)
-        self.get_cars_at_intersection().append(new_car)
-
-    def delete_car(self, left_intersection_message):
-        """
-        Deletes a car from the list of cars at the intersection
-        :param left_intersection_message: message of the car that left the intersection
-        """
-        cars_at_intersection = self.get_cars_at_intersection()
-        cars_at_intersection.sort(key=lambda car: car.get_name())
-        cars_to_remove = []
-        # update car information
-        for car in cars_at_intersection:
-            following_car_name = car.get_following_car_message().get_name()
-            if car.get_name() == left_intersection_message.get_name():
-                cars_to_remove.append(car)
-            if left_intersection_message.get_name() == following_car_name:
-                car.set_controller(default_controller.default_controller)
-                car.set_following(False)
-        # remove cars that left
-        for car in cars_to_remove:
-            cars_at_intersection.remove(car)
-        # update following car information
-        cars_at_intersection_dict = {car.get_name(): car for car in cars_at_intersection}
-        for car in cars_at_intersection:
-            following_car_name = car.get_following_car_message().get_name()
-            if following_car_name in cars_at_intersection_dict.keys():
-                car.set_following_car_message(InfoMessage(cars_at_intersection_dict[following_car_name]))
-
-        if left_intersection_message.get_name() == self.get_following_car_message().get_name():
-            self.set_controller(default_controller.default_controller)
-            self.set_following(False)
-
     def get_cars_at_intersection(self):
         """
         Returns the list of cars present at the intersection
@@ -763,40 +821,19 @@ class Car(object):
         """
         self.cars_at_intersection = cars_at_intersection
 
-    def make_supervisor(self, supervisor_left_message):
-        """
-        Makes this car the supervisor of the intersection.
-        :param supervisor_left_message: message with the information needed for this car to be supervisor.
-        """
-        self.set_active_supervisory(True)
-        self.set_cars_at_intersection(supervisor_left_message.get_cars_at_intersection())
-
     def get_new_messages(self):
+        """
+        Gets the new messages generated by this car.
+        :return: <list of Messages>
+        """
         return self.new_messages
 
     def set_new_messages(self, new_messages_list):
+        """
+        Sets the new messages.
+        :param new_messages_list: <list of Messages>
+        """
         self.new_messages = new_messages_list
-
-    def supervisor_level(self, new_car, attack=False):
-        """
-        Function that emulates the functioning of the supervisor level of the T-intersection coordination algorithm in a
-        distributed way.
-        As the original supervisor level, check if a new car needs to follow and "old" car at the intersection, but it
-        works with messages (received and sent info).
-        :param attack: if true, all cars will be set default controller, driving at maximum speed.
-        :param new_car: information of the new car at the intersection
-        :return
-        """
-        self.new_supervisor_name = new_car.get_name()
-        if not attack:
-            old_cars = self.get_cars_at_intersection()
-            old_cars.sort(key=lambda car: car.get_name(), reverse=True)
-            old_cars.sort(key=lambda car: car.get_caravan_depth(), reverse=True)
-            for old_car in old_cars:
-                if new_car.cross_path(old_car.get_lane(), old_car.get_intention()):
-                    new_car.start_following(FollowingCarMessage(old_car, new_car.get_name()))
-                    self.get_new_messages().append(FollowingCarMessage(old_car, new_car.get_name()))
-                    break
 
     def get_new_supervisor_name(self):
         """
@@ -804,3 +841,31 @@ class Car(object):
         :return: <int> name of the car that will be the new supervisor.
         """
         return self.new_supervisor_name
+
+    def get_log_messages(self):
+        """
+        Getter for log messages.
+        :return: <message list> list of Messages.
+        """
+        return self.log_messages
+
+    def set_log_messages(self, log_messages):
+        """
+        Sets the log messages.
+        :param log_messages:  <list of Messages> messages to set.
+        """
+        self.log_messages = log_messages
+
+    def set_registered_caravan_depth(self, depth):
+        """
+        Set registered caravan depth
+        :param depth: new depth of the car at the virtual caravan.
+        """
+        self.registered_caravan_depth = depth
+
+    def get_registered_caravan_depth(self):
+        """
+        Gets the registered depth of this car at the virtual caravan.
+        :return: <int>
+        """
+        return self.registered_caravan_depth
