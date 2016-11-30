@@ -45,14 +45,14 @@ def see_collision(log):
                     coso.get_lane()) + " intention " + coso.get_intention() + " depth " + str(
                     coso.get_registered_caravan_depth()) + " following " + str(
                     coso.get_following_car_message().get_name() - first_car_name + 1) + " supervisor " + str(
-                    coso.get_active_supervisor())
+                    coso.is_supervisor())
             print "Vehiculos al momento de la creacion:"
             for coso in cars_at_creation_of_collided_car[collided_cars[actual_collision][1].get_name()]:
                 print "Car " + str(coso.get_name() - first_car_name + 1) + " lane " + str(
                     coso.get_lane()) + " intention " + coso.get_intention() + " depth " + str(
                     coso.get_caravan_depth()) + " following " + str(
                     coso.get_following_car_message().get_name() - first_car_name + 1) + " supervisor " + str(
-                    coso.get_active_supervisor())
+                    coso.is_supervisor())
             printed = True
             print "\n"
 

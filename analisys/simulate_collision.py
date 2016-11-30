@@ -4,8 +4,8 @@ from log_files_process import generate_left_intersection_cars_from_file, generat
     generate_coordination_info_from_file
 from auxiliary_functions.auxiliary_functions import display_info_on_car, show_caravan, init_graphic_environment, \
     check_close_application, continue_simulation, colliding_cars
-from models.car import Car
-from models.message import LeftIntersectionMessage, SupervisorLeftIntersectionMessage, NewCarMessage
+from models.car import Car, SupervisorCar
+from models.message import NewCarMessage
 
 
 def simulate_collisions(log):
@@ -29,8 +29,8 @@ def simulate_collisions(log):
     screen, background, intersection_background, font = init_graphic_environment(1468, 768)
     full_intersection_rect = pygame.Rect(0, 0, 768, 768)
 
-    infrastructure_supervisor = Car(-1)
-    infrastructure_supervisor.set_active_supervisory(True)
+    infrastructure_supervisor = SupervisorCar(-1)
+    # infrastructure_supervisor.set_active_supervisory(True)
     screen_width = 1468
     creation_dummy_cars = []
     for coordinates in [(435, 760, 0, 0), (760, 345, 90, 1), (345, 10, 180, 2), (10, 435, 270, 3)]:
@@ -84,9 +84,11 @@ def simulate_collisions(log):
                     car.set_new_messages([])
                     if not car.screen_car.colliderect(full_intersection_rect):
                         left_intersection_cars.append(car)
-                        new_messages.append(LeftIntersectionMessage(car))
-                        if car.get_active_supervisor():
-                            new_messages.insert(0, SupervisorLeftIntersectionMessage(car))
+                        for message in car.get_left_intersection_messages():
+                            new_messages.append(message)
+                        # new_messages.append(LeftIntersectionMessage(car))
+                        # if car.get_active_supervisor():
+                        #     new_messages.insert(0, SupervisorLeftIntersectionMessage(car))
                         if log:
                             left_intersection_cars_log.append(car)
                         continue

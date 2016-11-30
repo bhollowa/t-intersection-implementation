@@ -119,7 +119,7 @@ def colliding_cars(car_list):
     return None, False
 
 
-def display_info_on_car(car, display, letter, normalized=1, *args):
+def display_info_on_car(car, display, letter, normalized=1):
     """
     Displays some information of a car on top of it. The Car, display to draw on and the font to write. In args params
     can be passed the "name", "speed" and "following" param depending of which want to be displayed.
@@ -131,13 +131,9 @@ def display_info_on_car(car, display, letter, normalized=1, *args):
     :param normalized: reduce the number of the names of the cars so they start at 1.
     """
     x, y = car.get_position()
-    if "name" in args:
-        display.blit(letter.render(str(car.get_name() - normalized + 1), True, black), (x, y - 30))
-    if "speed" in args:
-        display.blit(letter.render(str(car.get_speed()), True, black), (x, y - 30))
-    if "following" in args and car.get_following_car_message() is not None:
-        display.blit(letter.render(str(int(car.get_following_car_message().get_name()) - normalized + 1), True, black),
-                     (x, y))
+    display.blit(letter.render(str(car.get_name() - normalized + 1), True, black), (x, y - 30))
+    display.blit(letter.render(str(int(car.get_following_car_message().get_name()) - normalized + 1), True, black),
+                 (x, y))
 
 
 def create_car_from_json(json_car):
@@ -212,7 +208,7 @@ def supervisor(car_list):
     :return: <boolean> True if there is a car with active supervisor level. False otherwise.
     """
     for car in car_list:
-        if car.get_active_supervisor():
+        if car.is_supervisor:
             return True
     return False
 
@@ -280,12 +276,12 @@ def show_caravan(cars, screen, letter, collided_cars, screen_width, normalized=1
         if collided_cars is not None:
             if car[0].get_name() == collided_cars[0].get_name() or car[0].get_name() == collided_cars[1].get_name():
                 screen.blit(collided_car_surface, car[1])
-            elif car[0].get_active_supervisor():
+            elif car[0].is_supervisor:
                 screen.blit(leader_car_surface, car[1])
             else:
                 screen.blit(car_surface, car[1])
         else:
-            if car[0].get_active_supervisor():
+            if car[0].is_supervisor:
                 screen.blit(leader_car_surface, car[1])
             else:
                 screen.blit(car_surface, car[1])
