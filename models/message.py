@@ -1,5 +1,4 @@
 from math import pi, cos, sin, atan
-from time import time
 
 
 class Message(object):
@@ -33,7 +32,7 @@ class Message(object):
             self.acceleration = 3
             self.name = -1
             self.speed = 10
-            self.creation_time = time()
+            self.creation_time = -1
             self.new = True
             self.intention = "s"
             self.caravan_depth = 0
@@ -45,6 +44,10 @@ class Message(object):
         self.value = self.value_dict[self.__class__.__name__]
 
     def __str__(self):
+        """
+        Generates a string that describes this message.
+        :return: <string>
+        """
         return self.__class__.__name__ + " From " + str(self.get_name()) + " depth " + str(self.get_caravan_depth())
 
     def virtual_distance(self):
@@ -52,15 +55,14 @@ class Message(object):
         Gets the virtual position of the car.
         :return: <int> virtual position of the car
         """
-        virtual_distance_value = 0
         conflict_zone_radio = 384.0
         path_width = 172.0
         right_turn_radio = path_width / 4.0
         left_turn_radio = 3 * path_width / 4.0
         initial_straight_section = conflict_zone_radio - path_width / 2.0
-        if self.get_intention() is "s":
+        if self.get_intention() == "s":
             virtual_distance_value = self.get_virtual_x_position()
-        elif self.get_intention() is "r":
+        elif self.get_intention() == "r":
             if self.get_virtual_x_position() <= initial_straight_section:  # Calculate real virtual distance
                 virtual_distance_value = self.get_virtual_x_position()
             elif self.get_virtual_y_position() > -right_turn_radio:
@@ -171,9 +173,17 @@ class Message(object):
         return self.car
 
     def set_follow(self, follow):
+        """
+        Set the follow param.
+        :param follow: <boolean>
+        """
         self.follow = follow
 
     def get_follow(self):
+        """
+        Get the follow param value.
+        :return: <boolean>
+        """
         return self.follow
 
     def get_origin_x_position(self):
@@ -219,6 +229,10 @@ class Message(object):
         return self.acceleration
 
     def get_intention(self):
+        """
+        Get the intention of the car that created this message.
+        :return: <string> intention
+        """
         return self.intention
 
     def get_virtual_x_position(self):
@@ -262,6 +276,10 @@ class Message(object):
         self.caravan_depth = new_depth
 
     def get_lane(self):
+        """
+        Returns the lane of the car that created this message.
+        :return: <int> lane number.
+        """
         return self.lane
 
     def cross_path(self, other_car_lane, other_car_intention):
@@ -283,11 +301,26 @@ class Message(object):
         return all_tables[(self_lane - other_car_lane) % 4][lane_to_int_dict[self_intention]][
             lane_to_int_dict[other_car_intention]]
 
-    def process(self, car):
-        pass
-
     def get_value(self):
+        """
+        Get the value of the message. Depends of the class of the message. Used for sorting purposes.
+        :return: <int>
+        """
         return self.value
+
+    def get_creation_time(self):
+        """
+        Get the creation time of the car that created this message.
+        :return:
+        """
+        return self.creation_time
+
+    def process(self, car):
+        """
+        Process the message. Depends of the class. Kind of instance method.
+        :param car: car that will process the message.
+        """
+        pass
 
 
 class InfoMessage(Message):
@@ -311,7 +344,7 @@ class NewCarMessage(Message):
     def __init__(self, car):
         """
         Initializer for this message. The only new information needed is the cars at the intersection.
-        :param car: supervisor leaving the intersection.
+        :param car: new car at the intersection..
         """
         super(self.__class__, self).__init__(car)
         self.following_car_message = car.get_following_car_message()
@@ -325,8 +358,12 @@ class NewCarMessage(Message):
         super(self.__class__, self).process(car)
         car.add_new_car(self)
 
-    def get_following_car_message(self):
-        return self.following_car_message
+    # def get_following_car_message(self):
+    #     """
+    #     Gets the message generated
+    #     :return:
+    #     """
+    #     return self.following_car_message
 
 
 class LeftIntersectionMessage(Message):
@@ -377,12 +414,16 @@ class SupervisorLeftIntersectionMessage(Message):
         return self.cars_at_intersection
 
     def get_new_supervisor_name(self):
+        """
+        Gets the name of the car that must be the new supervisor.
+        :return: <int> car name
+        """
         return self.new_supervisor_name
 
 
 class FollowingCarMessage(Message):
     """
-    Message used to inform a specific car wich car it must follow.
+    Message used to inform a specific car which car it must follow.
     """
     def __init__(self, car, following_car_name):
         """
@@ -401,4 +442,8 @@ class FollowingCarMessage(Message):
         car.start_following(self)
 
     def get_following_car_name(self):
+        """
+        Get the name of the car that the car receptor of this message must follow.
+        :return: <int> car name
+        """
         return self.following_car_name
