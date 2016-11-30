@@ -41,25 +41,32 @@ def check_close_application(user_input):
     """
     for event in user_input:
         if event.type == pygame.QUIT:
-            return False
+            return True
         if hasattr(event, 'key'):
-            if event.key == K_ESCAPE:
-                return False
-    return True
+            if event.type == pygame.KEYUP and event.key == K_ESCAPE:
+                return True
+    return False
 
 
 def continue_simulation(user_input):
+    """
+    Check the keyboard user input to continue the simulation.
+    :param user_input: user inputs of pygame
+    :return: <boolean>
+    """
     for event in user_input:
         if event.type == pygame.KEYUP and event.key is not K_ESCAPE:
-            return False
-    return True
+            return True
+    return False
 
 
-def random_car(name, min_speed, max_speed, **kwargs):
+def random_car(name, min_speed, max_speed, creation_time, number_of_lanes, **kwargs):
     """
     Generates a random car with the given name. The max speed is used to give an speed not giver than the maximum a the
     car. the lane can be passed in kwargs value if the lane wants to be specified.
     Example: "random_car(4,20,lane=3)"
+    :param number_of_lanes: number of lanes at the simulation
+    :param creation_time: creation car of the car
     :param name: name of the car.
     :param min_speed: minimum speed of a car.
     :param max_speed: maximum speed of the car.
@@ -69,35 +76,34 @@ def random_car(name, min_speed, max_speed, **kwargs):
     if "lane" in kwargs:
         pos_x, pos_y, direction, lane = initial_positions[kwargs["lane"]]
     else:
-        new_lane = randint(0, len(initial_positions) - 1)
-        if "last_lane" in kwargs:
-            if new_lane == kwargs["last_lane"] - 1:
-                new_lane = (new_lane + 1) % 4
+        new_lane = randint(0, number_of_lanes - 1)
         pos_x, pos_y, direction, lane = initial_positions[new_lane]
     initial_speed = randint(min_speed, max_speed)
     if "intention" in kwargs:
         intention = kwargs["intention"]
     else:
         intention = "s"
-        # random_intention = randint(0, 2)
-        # if random_intention == 0:
-        #     intention = "l"
-        # elif random_intention == 1:
-        #     intention = "r"
-        random_intention = randint(0, 1)
-        if lane == 0:
+        if number_of_lanes == 4:
+            random_intention = randint(0, 2)
             if random_intention == 0:
-                intention = "r"
-        elif lane == 1:
-            if random_intention == 0:
-                intention = "r"
-            else:
                 intention = "l"
+            elif random_intention == 1:
+                intention = "r"
         else:
-            if random_intention == 1:
-                intention = "l"
+            random_intention = randint(0, 1)
+            if lane == 0:
+                if random_intention == 0:
+                    intention = "r"
+            elif lane == 1:
+                if random_intention == 0:
+                    intention = "r"
+                else:
+                    intention = "l"
+            else:
+                if random_intention == 1:
+                    intention = "l"
     return Car(name, pos_x, pos_y, direction=direction, lane=lane, absolute_speed=initial_speed,
-               intention=intention)
+               intention=intention, creation_time=creation_time)
 
 
 def colliding_cars(car_list):
@@ -113,7 +119,7 @@ def colliding_cars(car_list):
     return None, False
 
 
-def display_info_on_car(car, display, letter, *args):
+def display_info_on_car(car, display, letter, normalized=1, *args):
     """
     Displays some information of a car on top of it. The Car, display to draw on and the font to write. In args params
     can be passed the "name", "speed" and "following" param depending of which want to be displayed.
@@ -122,48 +128,16 @@ def display_info_on_car(car, display, letter, *args):
     :param display: display in which the car will be drawn.
     :param letter: font to write the information.
     :param args: optional arguments to decide which information will be displayed.
+    :param normalized: reduce the number of the names of the cars so they start at 1.
     """
     x, y = car.get_position()
     if "name" in args:
-        display.blit(letter.render(str(car.name), True, black), (x, y))
+        display.blit(letter.render(str(car.get_name() - normalized + 1), True, black), (x, y - 30))
     if "speed" in args:
         display.blit(letter.render(str(car.get_speed()), True, black), (x, y - 30))
     if "following" in args and car.get_following_car_message() is not None:
-        display.blit(letter.render(str(car.get_following_car_message().get_name()), True, black), (x, y - 30))
-
-
-def random_cars_from_lanes(lanes, name, max_speed):
-    """
-    Create x number of new random cars, with x being the length of the lanes list. The cars will be created on the
-    specified lanes, the names will start at the name param (must be integer), and the max_speed must be passed.
-    :param lanes: lanes in which the cars will be created.
-    :param name: name of the cars. It has the form (name + index(lane, lanes)).
-    :param max_speed: max speed of the cars
-    :return: list with random cars.
-    """
-    new_cars = []
-    for i in range(len(lanes)):
-        new_cars.append(random_car(name + i, max_speed, max_speed, lane=lanes[i]))
-    return new_cars
-
-
-def create_random_cars(number_of_cars, check_last_lane):
-    """
-    Create number_of cars and returns them in a list.
-    :param number_of_cars: <integer> quantity of cars to be created.
-    :param check_last_lane: <boolean> if True, next car created will have a different lane
-    :return: <list> cars created
-    """
-    cars = []
-    min_speed = 10
-    max_speed = 20
-    last_lane = -1
-    for i in range(number_of_cars):
-        new_car = random_car(i, min_speed, max_speed, last_lane=last_lane)
-        if check_last_lane:
-            last_lane = new_car.get_lane()
-        cars.append(new_car)
-    return cars
+        display.blit(letter.render(str(int(car.get_following_car_message().get_name()) - normalized + 1), True, black),
+                     (x, y))
 
 
 def create_car_from_json(json_car):
@@ -182,6 +156,13 @@ def create_car_from_json(json_car):
 
 
 def setup_logger(logger_name, log_file, level=logging.DEBUG):
+    """
+    Set up the loggers of the application.
+    :param logger_name:
+    :param log_file:
+    :param level:
+    :return:
+    """
     l = logging.getLogger(logger_name)
     formatter = logging.Formatter('{"time":"%(asctime)s", "message":%(message)s},')
     file_handler = logging.FileHandler(log_file, mode='w')
@@ -199,8 +180,10 @@ def create_logs(log_name):
     setup_logger("collision" + log_name, logger_directory + "collisions" + log_name + ".log")
     setup_logger("numbers_of_cars" + log_name, logger_directory + "total_cars" + log_name + ".log")
     setup_logger("left_intersection" + log_name, logger_directory + "left_intersection" + log_name + ".log")
+    setup_logger("coordination" + log_name, logger_directory + "coordination" + log_name + ".log")
     return logging.getLogger('collision' + log_name), logging.getLogger(
-        'left_intersection' + log_name), logging.getLogger('numbers_of_cars' + log_name)
+        'left_intersection' + log_name), logging.getLogger('numbers_of_cars' + log_name), \
+        logging.getLogger('coordination' + log_name)
 
 
 def separate_new_and_old_cars(car_list):
@@ -234,7 +217,19 @@ def supervisor(car_list):
     return False
 
 
-def show_caravan(cars, screen, letter, collided_cars, screen_width):
+def supervisor_message(messages):
+    """
+    Check if there is a SupervisorLeftIntersectionMessage in the list of messages.
+    :param messages: list of messages.
+    :return: <boolean>
+    """
+    for message in messages:
+        if message.__class__.__name__ == "SupervisorLeftIntersectionMessage":
+            return True
+    return False
+
+
+def show_caravan(cars, screen, letter, collided_cars, screen_width, normalized=1):
     """
     Function to show the virtual caravan in the graphic simulation.
     :param cars: Cars at the intersection
@@ -242,6 +237,7 @@ def show_caravan(cars, screen, letter, collided_cars, screen_width):
     :param letter: font to write information
     :param collided_cars: information of the collided cars. None if there is no collision present.
     :param screen_width: width of the screen.
+    :param normalized: reduce the number of the names of the cars so they start at 1.
     """
     size = (25, 25)
     leaders = []
@@ -268,6 +264,7 @@ def show_caravan(cars, screen, letter, collided_cars, screen_width):
     virtual_cars = []
     for i in range(len(leaders)):
         virtual_cars.append((leaders[i], pygame.Rect((screen_width - 100, 700 * (i + 1) / (len(leaders) + 1)), size)))
+    not_leaders.sort(key=lambda not_leader_car: not_leader_car.get_name())
     for i in range(len(not_leaders)):
         for car in virtual_cars:
             if car[0].get_name() == not_leaders[i].get_following_car_name():
@@ -296,7 +293,7 @@ def show_caravan(cars, screen, letter, collided_cars, screen_width):
             screen.blit(follower_controller_surface, car[1])
         else:
             screen.blit(default_controller_surface, car[1])
-        screen.blit(letter.render(str(car[0].get_name()), True, black), car[1].topleft)
+        screen.blit(letter.render(str(car[0].get_name() - normalized + 1), True, black), car[1].topleft)
         screen.blit(letter.render(str(car[0].get_caravan_depth()), True, black),
                     (car[1].topleft[0], car[1].topleft[1] - 30))
         screen.blit(letter.render(str(car[0].get_intention() + " " + str(car[0].get_lane())), True, black),
@@ -310,6 +307,7 @@ def init_graphic_environment(screen_width, screen_height):
     :param screen_height: height of the screen.
     :return: the screen, the backgrounds and the font.
     """
+    os.environ['SDL_VIDEO_WINDOW_POS'] = "%d,%d" % (0, 0)
     images_directory = os.path.dirname(os.path.abspath(__file__)) + "/../images/"
     screen = pygame.display.set_mode((screen_width, screen_height))
     intersection_background = pygame.image.load(images_directory + "background.jpg")
