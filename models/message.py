@@ -7,8 +7,9 @@ class Message(object):
     (a negative one).
     The message can give the distance to the center of the car from it was created (based on the information given).
     """
-    value_dict = {"SupervisorLeftIntersectionMessage": 3, "LeftIntersectionMessage": 2, "NewCarMessage": 1,
-                  "InfoMessage": 0, "FollowingCarMessage": 0, "Message": 0}
+    value_dict = {"SupervisorLeftIntersectionMessage": 5, "LeftIntersectionMessage": 2, "NewCarMessage": 1,
+                  "InfoMessage": 0, "FollowingCarMessage": 0, "Message": 0, "SecondAtChargeMessage": 4,
+                  "NewSupervisorMessage": 3}
 
     def __init__(self, car=None):
         """
@@ -332,7 +333,6 @@ class InfoMessage(Message):
         Process the message. Sets the old message to be this new one, so the information of the car is updated.
         :param car: car whose following car information will be updated.
         """
-
         if car.get_following_car_message().get_name() == self.get_name():
             car.set_following_car_message(self)
 
@@ -358,13 +358,6 @@ class NewCarMessage(Message):
         super(self.__class__, self).process(car)
         car.add_new_car(self)
 
-    # def get_following_car_message(self):
-    #     """
-    #     Gets the message generated
-    #     :return:
-    #     """
-    #     return self.following_car_message
-
 
 class LeftIntersectionMessage(Message):
     """
@@ -376,49 +369,24 @@ class LeftIntersectionMessage(Message):
         intersection.
         :param car: car to update information
         """
-        super(self.__class__, self).process(car)
-        car.delete_car(self)
+        super(LeftIntersectionMessage, self).process(car)
+        car.delete_car_at_intersection(self)
 
 
-class SupervisorLeftIntersectionMessage(Message):
+class SupervisorLeftIntersectionMessage(LeftIntersectionMessage):
     """
     Message created by a car that was supervisor and has left the intersection.
     """
-    def __init__(self, car):
-        """
-        Initializer for this message. The only new information needed is the cars at the intersection.
-        :param car: supervisor leaving the intersection.
-        """
-        super(self.__class__, self).__init__(car)
-        cars_at_intersection = car.get_cars_at_intersection()
-        for car_at_intersection in cars_at_intersection:
-            if car_at_intersection.get_name() == car.get_name():
-                cars_at_intersection.remove(car_at_intersection)
-        self.cars_at_intersection = cars_at_intersection
-        self.new_supervisor_name = car.get_new_supervisor_name()
 
     def process(self, car):
         """
         Process the message. Makes the car the new supervisor and gives it all the information needs to work correctly.
         :param car: new supervisor.
         """
-        super(self.__class__, self).process(car)
-        if car.get_name() == self.get_new_supervisor_name():
-            car.make_supervisor(self)
-
-    def get_cars_at_intersection(self):
-        """
-        Returns the list of cars present at the intersection
-        :return: list of cars
-        """
-        return self.cars_at_intersection
-
-    def get_new_supervisor_name(self):
-        """
-        Gets the name of the car that must be the new supervisor.
-        :return: <int> car name
-        """
-        return self.new_supervisor_name
+        super(SupervisorLeftIntersectionMessage, self).process(car)
+        if car.is_second_at_charge:
+            print "Car " + str(car.get_name()) + " is at charge "
+            car.set_supervisor_left_intersection(True)
 
 
 class FollowingCarMessage(Message):
@@ -429,6 +397,7 @@ class FollowingCarMessage(Message):
         """
         Initializer for this message. The only new information needed is the cars at the intersection.
         :param car: supervisor leaving the intersection.
+        :param following_car_name: name of the car that must follow the car that created the message.
         """
         super(self.__class__, self).__init__(car)
         self.following_car_name = following_car_name
@@ -447,3 +416,83 @@ class FollowingCarMessage(Message):
         :return: <int> car name
         """
         return self.following_car_name
+
+
+class SecondAtChargeMessage(Message):
+    def __init__(self, car, second_at_charge_name):
+        """
+        Initializer for SecondAtChargeMessage. The info needes for the second at charge is the list of car present
+        at the intersection of the supervisor car.
+        :param car: supervisor leaving the intersection.
+        :param second_at_charge_name: name of the car that will be the second at charge.
+        """
+        super(self.__class__, self).__init__(car)
+        self.second_at_charge_name = second_at_charge_name
+        self.cars_at_intersection = car.get_cars_at_intersection()
+
+    def process(self, car):
+        """
+        Process the message for a car. If the name of the car is the same as the second at charge name stored in the
+        message, that car will be made the second at charge.
+        :param car: car to process the message
+        :return: None
+        """
+        super(SecondAtChargeMessage, self).process(car)
+        if car.get_name() == self.get_second_at_charge_name():
+            car.make_second_at_charge(self)
+
+    def get_second_at_charge_name(self):
+        """
+        Returns the name of the car that should be the second at charge.
+        :return: <int> Second at charge name
+        """
+        return self.second_at_charge_name
+
+    def get_cars_at_intersection(self):
+        """
+        Returns the list of cars present at the intersection
+        :return: list of cars
+        """
+        return self.cars_at_intersection
+
+
+class NewSupervisorMessage(Message):
+    """
+    Message class to inform a car that it's the new supervisor.
+    """
+    def __init__(self, car):
+        """
+        Gets the information to send this message to the new supervisor car.
+        :param car: car which created the message.
+        """
+        super(self.__class__, self).__init__(car)
+        self.cars_at_intersection = car.get_cars_at_intersection()
+        self.new_supervisor_name = car.get_new_supervisor_name()
+
+    def process(self, car):
+        """
+        Process the message for a car. If the name of the car is the same as the second at charge name stored in the
+        message, that car will be made the second at charge.
+        :param car: car to process the message
+        :return: None
+        """
+        super(NewSupervisorMessage, self).process(car)
+        if car.get_name() == self.get_new_supervisor_name():
+            print "Car " + str(self.get_name()) + " make supervisor " + str(car.get_name())
+            car.make_supervisor(self.get_cars_at_intersection())
+        if car.get_name() == self.get_name():
+            car.make_car()
+
+    def get_cars_at_intersection(self):
+        """
+        Returns the list of cars present at the intersection
+        :return: list of cars
+        """
+        return self.cars_at_intersection
+
+    def get_new_supervisor_name(self):
+        """
+        Gets the name of the car that must be the new supervisor.
+        :return: <int> car name
+        """
+        return self.new_supervisor_name
