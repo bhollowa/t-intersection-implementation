@@ -220,7 +220,8 @@ def supervisor_message(messages):
     :return: <boolean>
     """
     for message in messages:
-        if message.__class__.__name__ == "SupervisorLeftIntersectionMessage":
+        if message.__class__.__name__ == "SupervisorLeftIntersectionMessage" or \
+                        message.__class__.__name__ == "NewSupervisorMessage":
             return True
     return False
 
@@ -239,7 +240,7 @@ def show_caravan(cars, screen, letter, collided_cars, screen_width, normalized=1
     leaders = []
     not_leaders = []
     car_surface = pygame.Surface(size)
-    palette = [(0, 126, 255, 0), (255, 0, 0, 0), (0, 255, 0, 0), (255, 126, 0, 0), (255, 0, 126, 0)]
+    palette = [(0, 126, 255, 0), (255, 0, 0, 0), (0, 255, 0, 0), (255, 126, 0, 0), (255, 0, 126, 0), (126, 0, 126, 0)]
     car_surface.fill(palette[0])
     collided_car_surface = pygame.Surface(size)
     collided_car_surface.fill(palette[1])
@@ -249,6 +250,8 @@ def show_caravan(cars, screen, letter, collided_cars, screen_width, normalized=1
     default_controller_surface.fill(palette[3])
     follower_controller_surface = pygame.Surface((10, 10))
     follower_controller_surface.fill(palette[4])
+    second_at_charge_surface = pygame.Surface(size)
+    second_at_charge_surface.fill(palette[5])
 
     for car in cars:
         if not car.get_following_car_name() in [cars[k].get_name() for k in range(len(cars))]:
@@ -278,11 +281,15 @@ def show_caravan(cars, screen, letter, collided_cars, screen_width, normalized=1
                 screen.blit(collided_car_surface, car[1])
             elif car[0].is_supervisor:
                 screen.blit(leader_car_surface, car[1])
+            elif car[0].is_second_at_charge:
+                screen.blit(second_at_charge_surface, car[1])
             else:
                 screen.blit(car_surface, car[1])
         else:
             if car[0].is_supervisor:
                 screen.blit(leader_car_surface, car[1])
+            elif car[0].is_second_at_charge:
+                screen.blit(second_at_charge_surface, car[1])
             else:
                 screen.blit(car_surface, car[1])
         if car[0].get_controller() == follower_controller:
