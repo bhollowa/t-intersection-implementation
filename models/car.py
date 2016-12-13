@@ -2,9 +2,10 @@ import os
 from math import pi, cos, sin, atan
 from pygame import image, transform
 from time import time
+import random
 from car_controllers import default_controller, follower_controller
 from models.message import Message, InfoMessage, FollowingCarMessage, LeftIntersectionMessage, \
-    SupervisorLeftIntersectionMessage, SecondAtChargeMessage, NewSupervisorMessage
+    SupervisorLeftIntersectionMessage, SecondAtChargeMessage, NewSupervisorMessage, NewCarMessage
 
 images_directory = os.path.dirname(os.path.abspath(__file__)) + "/../images/"
 
@@ -52,17 +53,27 @@ class Car(object):
         self.screen_car = None
         self.follower_cars = []  # all the followers of the car will be here, so this car can send it information
         # to the others
-        self.cars_at_intersection = []
+        self.cars_at_intersection = {}
         self.new_messages = []
         self.following = False  # True if the car is following some other car
         self.new_car = True
         self.has_second_at_charge = False
         self.supervisor_left_intersection = False
+        self.attack_supervisor = False
+        self.has_alternate_second_at_charge = False
         self.control_law_value = 0
         self.last_virtual_distance = 0
         self.new_supervisor_name = -1
         self.log_messages = []
         self.registered_caravan_depth = 0
+        self.supervisor_counter = 4  # A car is coordinated in 2 ticks. If a car isn't
+        # coordinated in 4 ticks, the second at charge car will assume the supervisor isn't coordinating anymore.
+        self.following_car_counter = 4  # same as up
+        self.transmitter_receiver_dict = {}
+        self.new_cars_at_intersection_counter = []
+        # self.random_counter_fail = random.randint(0, 50)
+        # if self.random_counter_fail <= 40:
+        #     self.random_counter_fail = -1
 
     def __eq__(self, other):
         """
@@ -183,6 +194,9 @@ class Car(object):
         Updates the speed, position and images of the car. Receives inputs as if a user were playing with the car
         with the keyboards arrows.
         """
+        if self.following_car_counter == 0:
+            self.set_controller(default_controller.default_controller)
+        self.following_car_counter -= 1
         self.accelerate()
         self.get_controller()(self)
         self.turn()
@@ -268,25 +282,25 @@ class Car(object):
         :param message: message with the following info.
         """
         if self.get_name() == message.get_following_car_name():
-            self.set_following_car_message(message)
-            self.set_controller(follower_controller.follower_controller)
-            self.set_following(True)
-        for car in self.get_cars_at_intersection():
-            if car.get_name() == message.get_following_car_name():
-                car.set_following_car_message(message)
-                car.set_controller(follower_controller.follower_controller)
-                car.set_following(True)
-                break
+            if message.get_name() != -1:
+                self.set_following_car_message(message)
+                self.set_controller(follower_controller.follower_controller)
+                self.set_following(True)
+        if message.get_following_car_name() in self.get_cars_at_intersection():
+            car = self.get_cars_at_intersection()[message.get_following_car_name()]
+            car.set_following_car_message(message)
+            car.set_controller(follower_controller.follower_controller)
+            car.set_following(True)
 
-    def new_image(self):
+    def new_image(self, scale_rate=image_scale_rate):
         """
         Creates the image representation of a car, with his rotated image and his screen representation (with the rect).
         """
         self.image = image.load(images_directory + "car.png")
         self.rotated_image = transform.rotate(self.image, self.get_direction())  # image of the car rotated
         self.rotated_image = transform.scale(self.rotated_image, (  # reduction of the size of the image
-            int(self.rotated_image.get_rect().w * self.get_image_scale_rate()),
-            int(self.rotated_image.get_rect().h * self.get_image_scale_rate())))
+            int(self.rotated_image.get_rect().w * scale_rate),
+            int(self.rotated_image.get_rect().h * scale_rate)))
         self.screen_car = self.rotated_image.get_rect()  # rectangle representation of the car
         self.screen_car.center = self.get_position()  # add the position to the rectangle
 
@@ -318,45 +332,44 @@ class Car(object):
         """
         new_car = Car(new_car_message.get_name(), lane=new_car_message.get_lane(),
                       intention=new_car_message.get_intention(), creation_time=new_car_message.get_creation_time())
-        self.get_cars_at_intersection().append(new_car)
+        self.transmitter_receiver_dict[new_car.get_name()] = []
+        self.get_cars_at_intersection()[new_car.get_name()] = new_car
 
     def delete_car_at_intersection(self, left_intersection_message):
         """
         Deletes a car from the list of cars at the intersection
         :param left_intersection_message: message of the car that left the intersection
         """
-        cars_at_intersection = self.get_cars_at_intersection()
+        cars_at_intersection = self.get_cars_at_intersection().values()
         cars_at_intersection.sort(key=lambda car_at_intersection: car_at_intersection.get_name())
-        cars_to_remove = []
         # update car information
         for car in cars_at_intersection:
-            following_car_name = car.get_following_car_message().get_name()
-            if car.get_name() == left_intersection_message.get_name():
-                cars_to_remove.append(car)
-            if left_intersection_message.get_name() == following_car_name:
+            if left_intersection_message.get_name() == car.get_following_car_message().get_name():
                 car.set_controller(default_controller.default_controller)
                 car.set_following(False)
-        # remove cars that left
-        for car in cars_to_remove:
-            cars_at_intersection.remove(car)
+        if left_intersection_message.get_name() in cars_at_intersection:
+            del cars_at_intersection[left_intersection_message.get_name()]
+
         # update following car information
-        cars_at_intersection_dict = {car.get_name(): car for car in cars_at_intersection}
         for car in cars_at_intersection:
             following_car_name = car.get_following_car_message().get_name()
-            if following_car_name in cars_at_intersection_dict.keys():
-                car.set_following_car_message(InfoMessage(cars_at_intersection_dict[following_car_name]))
+            if following_car_name in self.get_cars_at_intersection():
+                car.set_following_car_message(InfoMessage(self.get_cars_at_intersection()[following_car_name]))
 
         if left_intersection_message.get_name() == self.get_following_car_message().get_name():
             self.set_controller(default_controller.default_controller)
             self.set_following(False)
+        if left_intersection_message.get_name() in self.transmitter_receiver_dict:
+            del self.transmitter_receiver_dict[left_intersection_message.get_name()]
 
-    def make_supervisor(self, cars_at_intersection):
+    def make_supervisor(self, new_supervisor_message):
         """
         Makes this car the supervisor of the intersection.
-        :param cars_at_intersection: cars at the intersection when this was selected as supervisor.
+        :param new_supervisor_message:
         """
         self.__class__ = SupervisorCar
-        self.set_cars_at_intersection(cars_at_intersection)
+        self.set_cars_at_intersection(new_supervisor_message.get_cars_at_intersection())
+        self.set_transmitter_receiver_dict(new_supervisor_message.get_transmitter_receiver_dict())
 
     def make_second_at_charge(self, second_at_charge_message):
         """
@@ -365,6 +378,7 @@ class Car(object):
         """
         self.__class__ = SecondAtChargeCar
         self.set_cars_at_intersection(second_at_charge_message.get_cars_at_intersection())
+        self.set_transmitter_receiver_dict(second_at_charge_message.get_transmitter_receiver_dict())
 
     def make_car(self):
         """
@@ -554,6 +568,7 @@ class Car(object):
         Sets the message of the car.
         :param message: new message.
         """
+        self.following_car_counter = 4
         self.following_car_message = message
 
     def get_following_car_message(self):
@@ -601,13 +616,6 @@ class Car(object):
             self.creation_time = time()
         else:
             self.creation_time = creation_time
-
-    # def set_active_supervisory(self, active):
-    #     """
-    #     Sets the active_supervisory to active.
-    #     :param active: True to set this car as the supervisor. False otherwise.
-    #     """
-    #     self.active_supervisory = active
 
     def set_old(self):
         """
@@ -817,7 +825,8 @@ class Car(object):
         Sets the list of cars at intersection to be the new list.
         :param cars_at_intersection: new list of cars at the intersection
         """
-        self.cars_at_intersection = cars_at_intersection
+        for car_name in cars_at_intersection:
+            self.cars_at_intersection[car_name] = cars_at_intersection[car_name]
 
     def get_new_messages(self):
         """
@@ -875,11 +884,38 @@ class Car(object):
         """
         return LeftIntersectionMessage(self)
 
+    def get_transmitter_receiver_dict(self):
+        """
+        Returns the dict with the information of transmitter and receivers
+        :return: <dict>
+        """
+        return self.transmitter_receiver_dict
+
+    def set_transmitter_receiver_dict(self, transmitter_receiver_dict):
+        """
+        Set the transmitter to receiver dict.
+        :param transmitter_receiver_dict: dict to set
+        :return: None
+        """
+        self.transmitter_receiver_dict = transmitter_receiver_dict
+
+    def get_new_cars_at_intersection(self):
+        return self.new_cars_at_intersection_counter
+
 
 class SupervisorCar(Car):
     """
     SupervisorCar class with the methods of the supervisor.
     """
+
+    def update(self):
+        super(SupervisorCar, self).update()
+        if self.attack_supervisor:
+            self.set_new_messages([])
+        # self.random_counter_fail -= 1
+        # if self.random_counter_fail == 0 and self.__class__ == SupervisorCar:
+        #     print "Supervisor " + str(self.get_name()) + " failure"
+        #     self.attack_supervisor = True
 
     def supervisor_level(self, new_car, attack=False):
         """
@@ -892,18 +928,21 @@ class SupervisorCar(Car):
         """
         log_string = {"coordinated_car": new_car}
         if not attack:
-            old_cars = self.get_cars_at_intersection()
+            old_cars = self.get_cars_at_intersection().values()
             old_cars.sort(key=lambda car: car.get_name(), reverse=True)
             old_cars.sort(key=lambda car: car.get_caravan_depth(), reverse=True)
             log_string["old_cars"] = old_cars
             for old_car in old_cars:
                 if new_car.cross_path(old_car.get_lane(), old_car.get_intention()) and \
-                                new_car.get_name() != old_car.get_name():
+                        new_car.get_name() != old_car.get_name():
                     log_string["selected_car"] = old_car
                     self.get_log_messages().append(log_string)
-                    new_car.start_following(FollowingCarMessage(old_car, new_car.get_name()))
-                    self.get_new_messages().append(FollowingCarMessage(old_car, new_car.get_name()))
+                    following_car_message = FollowingCarMessage(old_car, new_car.get_name())
+                    new_car.start_following(following_car_message)
+                    self.get_new_messages().append(following_car_message)
                     break
+            if not new_car.get_following():
+                self.get_new_messages().append(FollowingCarMessage(None, new_car.get_name()))
 
     def add_new_car(self, new_car_message):
         """
@@ -913,19 +952,27 @@ class SupervisorCar(Car):
         """
         new_car = Car(new_car_message.get_name(), lane=new_car_message.get_lane(),
                       intention=new_car_message.get_intention(), creation_time=new_car_message.get_creation_time())
-        self.supervisor_level(new_car)
-        self.get_cars_at_intersection().append(new_car)
+        self.supervisor_level(new_car, self.attack_supervisor)
+        self.get_cars_at_intersection()[new_car.get_name()] = new_car
+        self.transmitter_receiver_dict[new_car.get_name()] = []
+        if new_car.get_following_car_name() in self.transmitter_receiver_dict:
+            self.transmitter_receiver_dict[new_car.get_following_car_name()].append(new_car.get_name())
         if not self.has_second_at_charge and new_car.get_name() != self.get_name():
-            self.has_second_at_charge = True
-            self.get_new_messages().append(SecondAtChargeMessage(self, new_car.get_name()))
+            if self.get_caravan_depth() < new_car.get_caravan_depth():
+                self.has_second_at_charge = True
+                self.has_alternate_second_at_charge = True
+                self.get_new_messages().append(SecondAtChargeMessage(self, new_car.get_name()))
+            if not self.has_alternate_second_at_charge:
+                self.has_alternate_second_at_charge = True
+                self.get_new_messages().append(SecondAtChargeMessage(self, new_car.get_name()))
 
     def get_left_intersection_messages(self):
         """
         Besides of the LeftIntersectionMessage, a Supervisor also generates a SupervisorLeftIntersection message
         :return: <list of messages>
         """
-        print "Car " + str(self.get_name()) + " left intersection with role " + self.__class__.__name__
-        return SupervisorLeftIntersectionMessage(self)
+        if not self.attack_supervisor:
+            return SupervisorLeftIntersectionMessage(self)
 
     @property
     def is_supervisor(self):
@@ -970,12 +1017,26 @@ class SecondAtChargeCar(SupervisorCar):
 
     def update(self):
         """
-        Update the car.Besides of moving it an generate the InformationMessage, the SecondAtCharge will check if the
+        Update the car.Besides of moving it and generate the InformationMessage, the SecondAtCharge will check if the
         supervisor is still active and, if it isn't, will create a NewSupervisorMessage for the new supervisor.
         """
         super(SecondAtChargeCar, self).update()
+        new_cars_at_intersection = self.get_new_cars_at_intersection()
         if self.get_supervisor_left_intersection():
+            print "nuevo supervisor " + str(self.get_new_supervisor_name())
             self.get_new_messages().append(NewSupervisorMessage(self))
+            for car_name in new_cars_at_intersection:
+                self.supervisor_level(self.get_cars_at_intersection()[car_name])
+            self.set_supervisor_left_intersection(False)
+        if self.supervisor_counter == 0:
+            print "falla supervisor, autos no coordinados: " + str([key for key in new_cars_at_intersection])
+            self.set_supervisor_left_intersection(True)
+        self.supervisor_counter -= 1
+
+    def start_following(self, message):
+        super(SecondAtChargeCar, self).start_following(message)
+        if message.get_following_car_name() in self.get_new_cars_at_intersection():
+            self.get_new_cars_at_intersection().remove(message.get_following_car_name())
 
     def add_new_car(self, new_car_message):
         """
@@ -986,7 +1047,11 @@ class SecondAtChargeCar(SupervisorCar):
         new_car = Car(new_car_message.get_name(), lane=new_car_message.get_lane(),
                       intention=new_car_message.get_intention(), creation_time=new_car_message.get_creation_time())
         self.supervisor_level(new_car)
-        self.get_cars_at_intersection().append(new_car)
+        self.get_cars_at_intersection()[new_car.get_name()] = new_car
+        self.get_new_cars_at_intersection().append(new_car.get_name())
+
+    def reset_supervisor_counter(self):
+        self.supervisor_counter = 4
 
     def get_supervisor_left_intersection(self):
         """

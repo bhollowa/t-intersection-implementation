@@ -27,6 +27,7 @@ class Message(object):
             self.new = car.is_new()
             self.intention = car.get_intention()
             self.caravan_depth = car.get_caravan_depth()
+            self.supervisor = car.is_supervisor
         else:
             self.actual_coordinates = (384, 384, 0, 1)
             self.origin_coordinates = (384, 384, 0, 1)
@@ -37,10 +38,9 @@ class Message(object):
             self.new = True
             self.intention = "s"
             self.caravan_depth = 0
+            self.supervisor = False
         self.receiver = None
-        self.type = "info"
         self.follower = None
-        self.car = None
         self.follow = False
         self.value = self.value_dict[self.__class__.__name__]
 
@@ -124,20 +124,6 @@ class Message(object):
         """
         return self.receiver
 
-    def get_type(self):
-        """
-        Returns the type of the message
-        :return: <string> Message type
-        """
-        return self.type
-
-    def set_type(self, message_type):
-        """
-        Sets the type of the message
-        :param message_type: <string> type of the mesage
-        """
-        self.type = message_type
-
     def get_name(self):
         """
         Gets the name which identifies the car.
@@ -158,20 +144,6 @@ class Message(object):
         :param follower: follower name
         """
         self.follower = follower
-
-    def set_car(self, car):
-        """
-        Sets the car so it can be used at the supervisory level.
-        :param car: reference of the car.
-        """
-        self.car = car
-
-    def get_car(self):
-        """
-        Returns the car variable.
-        :return: car variable
-        """
-        return self.car
 
     def set_follow(self, follow):
         """
@@ -323,6 +295,17 @@ class Message(object):
         """
         pass
 
+    def transmit(self, car_dict, transmitter_to_receiver_dict):
+        """
+        Transmit the message to all the cars that should receive this message
+        :param car_dict: list of cars as a dictionary with the name of the car as the key and the car as the value.
+        :param transmitter_to_receiver_dict: dictionary with the name of the transmitter as key and a list with the
+        names of the receivers as value.
+        :return: None
+        """
+        for car_name in transmitter_to_receiver_dict[self.get_name()]:
+            self.process(car_dict[car_name])
+
 
 class InfoMessage(Message):
     """
@@ -335,6 +318,8 @@ class InfoMessage(Message):
         """
         if car.get_following_car_message().get_name() == self.get_name():
             car.set_following_car_message(self)
+        if car.is_second_at_charge and self.supervisor:
+            car.reset_supervisor_counter()
 
 
 class NewCarMessage(Message):
@@ -347,7 +332,6 @@ class NewCarMessage(Message):
         :param car: new car at the intersection..
         """
         super(self.__class__, self).__init__(car)
-        self.following_car_message = car.get_following_car_message()
 
     def process(self, car):
         """
@@ -357,6 +341,17 @@ class NewCarMessage(Message):
         """
         super(self.__class__, self).process(car)
         car.add_new_car(self)
+
+    def transmit(self, car_dict, transmitter_to_receiver_dict):
+        """
+        Overrides transmit of generic message. For this message class, all cars must receive the message.
+        :param car_dict: list of cars as a dictionary with the name of the car as the key and the car as the value.
+        :param transmitter_to_receiver_dict: dictionary with the name of the transmitter as key and a list with the
+        names of the receivers as value.
+        :return: None
+        """
+        for car in car_dict.values():
+            self.process(car)
 
 
 class LeftIntersectionMessage(Message):
@@ -372,6 +367,17 @@ class LeftIntersectionMessage(Message):
         super(LeftIntersectionMessage, self).process(car)
         car.delete_car_at_intersection(self)
 
+    def transmit(self, car_dict, transmitter_to_receiver_dict):
+        """
+        Overrides transmit of generic message. For this message class, all cars must receive the message.
+        :param car_dict: list of cars as a dictionary with the name of the car as the key and the car as the value.
+        :param transmitter_to_receiver_dict: dictionary with the name of the transmitter as key and a list with the
+        names of the receivers as value.
+        :return: None
+        """
+        for car in car_dict.values():
+            self.process(car)
+
 
 class SupervisorLeftIntersectionMessage(LeftIntersectionMessage):
     """
@@ -385,8 +391,18 @@ class SupervisorLeftIntersectionMessage(LeftIntersectionMessage):
         """
         super(SupervisorLeftIntersectionMessage, self).process(car)
         if car.is_second_at_charge:
-            print "Car " + str(car.get_name()) + " is at charge "
             car.set_supervisor_left_intersection(True)
+
+    def transmit(self, car_dict, transmitter_to_receiver_dict):
+        """
+        Overrides transmit of generic message. For this message class, all cars must receive the message.
+        :param car_dict: list of cars as a dictionary with the name of the car as the key and the car as the value.
+        :param transmitter_to_receiver_dict: dictionary with the name of the transmitter as key and a list with the
+        names of the receivers as value.
+        :return: None
+        """
+        for car in car_dict.values():
+            self.process(car)
 
 
 class FollowingCarMessage(Message):
@@ -417,6 +433,17 @@ class FollowingCarMessage(Message):
         """
         return self.following_car_name
 
+    def transmit(self, car_dict, transmitter_to_receiver_dict):
+        """
+        Overrides transmit of generic message. For this message class, all cars must receive the message.
+        :param car_dict: list of cars as a dictionary with the name of the car as the key and the car as the value.
+        :param transmitter_to_receiver_dict: dictionary with the name of the transmitter as key and a list with the
+        names of the receivers as value.
+        :return: None
+        """
+        for car in car_dict.values():
+            self.process(car)
+
 
 class SecondAtChargeMessage(Message):
     def __init__(self, car, second_at_charge_name):
@@ -429,6 +456,7 @@ class SecondAtChargeMessage(Message):
         super(self.__class__, self).__init__(car)
         self.second_at_charge_name = second_at_charge_name
         self.cars_at_intersection = car.get_cars_at_intersection()
+        self.transmitter_receiver_dict = car.get_transmitter_receiver_dict()
 
     def process(self, car):
         """
@@ -438,6 +466,9 @@ class SecondAtChargeMessage(Message):
         :return: None
         """
         super(SecondAtChargeMessage, self).process(car)
+        if car.is_second_at_charge:
+            print "chao segundo"
+            car.make_car()
         if car.get_name() == self.get_second_at_charge_name():
             car.make_second_at_charge(self)
 
@@ -455,6 +486,23 @@ class SecondAtChargeMessage(Message):
         """
         return self.cars_at_intersection
 
+    def get_transmitter_receiver_dict(self):
+        """
+        Return the transmitter_receiver_dict
+        :return: <dict>
+        """
+        return self.transmitter_receiver_dict
+
+    def transmit(self, car_dict, transmitter_to_receiver_dict):
+        """
+        Overrides transmit of generic message. For this message class, all cars must receive the message.
+        :param car_dict: list of cars as a dictionary with the name of the car as the key and the car as the value.
+        :param transmitter_to_receiver_dict: dictionary with the name of the transmitter as key and a list with the
+        names of the receivers as value.
+        :return: None
+        """
+        self.process(car_dict[self.get_second_at_charge_name()])
+
 
 class NewSupervisorMessage(Message):
     """
@@ -468,6 +516,7 @@ class NewSupervisorMessage(Message):
         super(self.__class__, self).__init__(car)
         self.cars_at_intersection = car.get_cars_at_intersection()
         self.new_supervisor_name = car.get_new_supervisor_name()
+        self.transmitter_receiver_dict = car.get_transmitter_receiver_dict()
 
     def process(self, car):
         """
@@ -478,10 +527,7 @@ class NewSupervisorMessage(Message):
         """
         super(NewSupervisorMessage, self).process(car)
         if car.get_name() == self.get_new_supervisor_name():
-            print "Car " + str(self.get_name()) + " make supervisor " + str(car.get_name())
-            car.make_supervisor(self.get_cars_at_intersection())
-        if car.get_name() == self.get_name():
-            car.make_car()
+            car.make_supervisor(self)
 
     def get_cars_at_intersection(self):
         """
@@ -496,3 +542,21 @@ class NewSupervisorMessage(Message):
         :return: <int> car name
         """
         return self.new_supervisor_name
+
+    def get_transmitter_receiver_dict(self):
+        """
+        Return the transmitter_receiver_dict
+        :return: <dict>
+        """
+        return self.transmitter_receiver_dict
+
+    def transmit(self, car_dict, transmitter_to_receiver_dict):
+        """
+        Overrides transmit of generic message. For this message class, all cars must receive the message.
+        :param car_dict: list of cars as a dictionary with the name of the car as the key and the car as the value.
+        :param transmitter_to_receiver_dict: dictionary with the name of the transmitter as key and a list with the
+        names of the receivers as value.
+        :return: None
+        """
+        self.process(car_dict[self.get_new_supervisor_name()])
+        self.process(car_dict[self.get_name()])

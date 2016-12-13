@@ -55,10 +55,21 @@ def continue_simulation(user_input):
     :return: <boolean>
     """
     for event in user_input:
-        if event.type == pygame.KEYUP and event.key is not K_ESCAPE:
+        if event.type == pygame.KEYUP and event.key is not K_1:
             return True
     return False
 
+
+def coordinator_fail(user_input):
+    """
+    Check the keyboard user input to continue the simulation.
+    :param user_input: user inputs of pygame
+    :return: <boolean>
+    """
+    for event in user_input:
+        if event.type == pygame.KEYUP and event.key is K_1:
+            return True
+    return False
 
 def random_car(name, min_speed, max_speed, creation_time, number_of_lanes, **kwargs):
     """
@@ -213,6 +224,17 @@ def supervisor(car_list):
     return False
 
 
+def get_supervisor(car_list):
+    """
+    Returns the Supervisor car from a car list
+    :param car_list: list of cars
+    :return: supervisor car
+    """
+    for car in car_list:
+        if car.is_supervisor:
+            return car
+
+
 def supervisor_message(messages):
     """
     Check if there is a SupervisorLeftIntersectionMessage in the list of messages.
@@ -240,7 +262,8 @@ def show_caravan(cars, screen, letter, collided_cars, screen_width, normalized=1
     leaders = []
     not_leaders = []
     car_surface = pygame.Surface(size)
-    palette = [(0, 126, 255, 0), (255, 0, 0, 0), (0, 255, 0, 0), (255, 126, 0, 0), (255, 0, 126, 0), (126, 0, 126, 0)]
+    palette = [(0, 126, 255, 0), (255, 0, 0, 0), (0, 255, 0, 0), (255, 126, 0, 0), (255, 0, 126, 0), (126, 0, 126, 0),
+               (0, 0, 0, 0)]
     car_surface.fill(palette[0])
     collided_car_surface = pygame.Surface(size)
     collided_car_surface.fill(palette[1])
@@ -252,6 +275,8 @@ def show_caravan(cars, screen, letter, collided_cars, screen_width, normalized=1
     follower_controller_surface.fill(palette[4])
     second_at_charge_surface = pygame.Surface(size)
     second_at_charge_surface.fill(palette[5])
+    bad_leader_car_surface = pygame.Surface(size)
+    bad_leader_car_surface.fill(palette[6])
 
     for car in cars:
         if not car.get_following_car_name() in [cars[k].get_name() for k in range(len(cars))]:
@@ -287,7 +312,10 @@ def show_caravan(cars, screen, letter, collided_cars, screen_width, normalized=1
                 screen.blit(car_surface, car[1])
         else:
             if car[0].is_supervisor:
-                screen.blit(leader_car_surface, car[1])
+                if car[0].attack_supervisor:
+                    screen.blit(bad_leader_car_surface, car[1])
+                else:
+                    screen.blit(leader_car_surface, car[1])
             elif car[0].is_second_at_charge:
                 screen.blit(second_at_charge_surface, car[1])
             else:
