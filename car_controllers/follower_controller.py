@@ -1,5 +1,4 @@
 from car_controllers.default_controller import default_controller
-from scipy.misc import derivative
 
 
 def follower_controller(car):
@@ -15,7 +14,7 @@ def follower_controller(car):
     headway_time = 0.7
     k_p = 0.2
     k_d = 0.7
-    stand_still_distance = car.get_car_length() * 5
+    stand_still_distance = car.get_car_length() * 7
     if not car.get_following():
         car.set_controller(default_controller)
     car_message = car.get_following_car_message()

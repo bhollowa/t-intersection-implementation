@@ -910,8 +910,6 @@ class SupervisorCar(Car):
 
     def update(self):
         super(SupervisorCar, self).update()
-        if self.attack_supervisor:
-            self.set_new_messages([])
         # self.random_counter_fail -= 1
         # if self.random_counter_fail == 0 and self.__class__ == SupervisorCar:
         #     print "Supervisor " + str(self.get_name()) + " failure"
@@ -980,7 +978,7 @@ class SupervisorCar(Car):
         Returns True a SupervisorCar is a supervisor
         :return: <boolean> True
         """
-        return True
+        return not self.attack_supervisor
 
 
 class InfrastructureCar(SupervisorCar):
@@ -1023,13 +1021,13 @@ class SecondAtChargeCar(SupervisorCar):
         super(SecondAtChargeCar, self).update()
         new_cars_at_intersection = self.get_new_cars_at_intersection()
         if self.get_supervisor_left_intersection():
-            print "nuevo supervisor " + str(self.get_new_supervisor_name())
-            self.get_new_messages().append(NewSupervisorMessage(self))
             for car_name in new_cars_at_intersection:
                 self.supervisor_level(self.get_cars_at_intersection()[car_name])
-            self.set_supervisor_left_intersection(False)
+            if self.new_supervisor_name != -1:
+                self.get_new_messages().append(NewSupervisorMessage(self))
+                self.set_supervisor_left_intersection(False)
+                self.new_supervisor_name = -1
         if self.supervisor_counter == 0:
-            print "falla supervisor, autos no coordinados: " + str([key for key in new_cars_at_intersection])
             self.set_supervisor_left_intersection(True)
         self.supervisor_counter -= 1
 

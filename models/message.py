@@ -467,7 +467,6 @@ class SecondAtChargeMessage(Message):
         """
         super(SecondAtChargeMessage, self).process(car)
         if car.is_second_at_charge:
-            print "chao segundo"
             car.make_car()
         if car.get_name() == self.get_second_at_charge_name():
             car.make_second_at_charge(self)

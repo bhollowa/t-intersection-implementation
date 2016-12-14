@@ -76,7 +76,6 @@ def main_simulation(graphic_environment, limit, *args, **kwargs):
                         new_car.new_image()
                         lanes_waiting_time[i] = (np.random.exponential(1.0 / rate) * 15 + 30, 0)
                         if len(cars) == 0:  # not supervisor(cars) and not supervisor_message(messages):
-                            print "no hay autos ni supervisores"
                             new_car.__class__ = SupervisorCar
                         cars[car_name_counter] = new_car
                         new_messages.append(NewCarMessage(new_car))
