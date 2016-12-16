@@ -39,7 +39,8 @@ def main_simulation(graphic_environment, limit, *args, **kwargs):
     collision_wait = False
     display_time_counter = 0
     lanes_waiting_time = [(0, 0), (0, 0), (0, 0), (0, 0)]
-    rate = 0.005
+    rate = 0.01
+    number_of_lanes = 4
 
     infrastructure_supervisor = InfrastructureCar(-1)
     if not distributed:
@@ -60,7 +61,7 @@ def main_simulation(graphic_environment, limit, *args, **kwargs):
         dummy_car = Car(-1, coordinates[0], coordinates[1], direction=coordinates[2], lane=coordinates[3])
         dummy_car.new_image(0.1)
         creation_dummy_cars.append(dummy_car)
-    number_of_lanes = 3
+
     while iteration and car_name_counter < limit:
         if not collision_wait:
             display_time_counter += 1
@@ -154,9 +155,9 @@ def main_simulation(graphic_environment, limit, *args, **kwargs):
             if graphic_environment:
                 events = pygame.event.get()
                 supervisor_car = get_supervisor(cars.values())
-                if coordinator_fail(events):
+                if coordinator_fail(events) and supervisor_car:
                     supervisor_car.attack_supervisor = True
-                if coordinator_lies(events):
+                if coordinator_lies(events) and supervisor_car:
                     supervisor_car.supervisor_lies = True
                 iteration = not check_close_application(events)
                 collision_wait = continue_simulation(events) or collision_wait

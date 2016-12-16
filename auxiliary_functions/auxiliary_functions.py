@@ -244,7 +244,7 @@ def get_supervisor(car_list):
     :return: supervisor car
     """
     for car in car_list:
-        if car.is_supervisor:
+        if car.is_supervisor and not car.supervisor_lies:
             return car
 
 

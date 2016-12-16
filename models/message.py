@@ -393,8 +393,10 @@ class SupervisorLeftIntersectionMessage(LeftIntersectionMessage):
         :param car: new supervisor.
         """
         super(SupervisorLeftIntersectionMessage, self).process(car)
-        if car.is_second_at_charge:
+        if car.is_second_at_charge and car.supervisor_counter == 0 and self.get_name() not in car.get_liar_supervisor_names():
             car.set_supervisor_left_intersection(True)
+        elif self.get_name() in car.get_liar_supervisor_names():
+            car.get_liar_supervisor_names().remove(self.get_name())
 
     def transmit(self, car_dict, transmitter_to_receiver_dict):
         """
@@ -412,7 +414,7 @@ class FollowingCarMessage(Message):
     """
     Message used to inform a specific car which car it must follow.
     """
-    def __init__(self, car, following_car_name):
+    def __init__(self, car, following_car_name, coordinator_name):
         """
         Initializer for this message. The only new information needed is the cars at the intersection.
         :param car: supervisor leaving the intersection.
@@ -420,6 +422,7 @@ class FollowingCarMessage(Message):
         """
         super(self.__class__, self).__init__(car)
         self.following_car_name = following_car_name
+        self.coordinator_name = coordinator_name
 
     def process(self, car):
         """
@@ -446,6 +449,13 @@ class FollowingCarMessage(Message):
         """
         for car in car_dict.values():
             self.process(car)
+
+    def get_coordinator_name(self):
+        """
+        Returns the name of the car that create this message and process the coordination.
+        :return: <int> name of the coordinator.
+        """
+        return self.coordinator_name
 
 
 class SecondAtChargeMessage(Message):
