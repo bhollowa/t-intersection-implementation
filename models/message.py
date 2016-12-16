@@ -320,6 +320,9 @@ class InfoMessage(Message):
             car.set_following_car_message(self)
         if car.is_second_at_charge and self.supervisor:
             car.reset_supervisor_counter()
+        if car.is_supervisor:
+            if self.get_name() in car.update_cars_at_intersection_counter:
+                car.update_cars_at_intersection_counter[self.get_name()] = 4
 
 
 class NewCarMessage(Message):

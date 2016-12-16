@@ -1,7 +1,7 @@
 import pygame
 from auxiliary_functions.auxiliary_functions import check_close_application, random_car, colliding_cars, \
     display_info_on_car, create_logs, continue_simulation, show_caravan, init_graphic_environment, supervisor, \
-    supervisor_message, get_supervisor, coordinator_fail
+    supervisor_message, get_supervisor, coordinator_fail, coordinator_lies
 from models.message import NewCarMessage
 from models.car import Car, InfrastructureCar, SupervisorCar
 import sys
@@ -10,7 +10,6 @@ from random import randint
 
 
 def main_simulation(graphic_environment, limit, *args, **kwargs):
-    attack_supervisory = "attack_supervisory" in args
     distributed = "distributed" in args
     log = "log" in kwargs
     show_virtual_caravan = "show_caravan" in args
@@ -40,7 +39,7 @@ def main_simulation(graphic_environment, limit, *args, **kwargs):
     collision_wait = False
     display_time_counter = 0
     lanes_waiting_time = [(0, 0), (0, 0), (0, 0), (0, 0)]
-    rate = 0.7
+    rate = 0.005
 
     infrastructure_supervisor = InfrastructureCar(-1)
     if not distributed:
@@ -74,7 +73,7 @@ def main_simulation(graphic_environment, limit, *args, **kwargs):
                         new_car = random_car(car_name_counter, min_speed, max_speed, counter, number_of_lanes,
                                              lane=lane)
                         new_car.new_image()
-                        lanes_waiting_time[i] = (np.random.exponential(1.0 / rate) * 15 + 30, 0)
+                        lanes_waiting_time[i] = (np.random.exponential(1.0 / rate), 0)
                         if len(cars) == 0:  # not supervisor(cars) and not supervisor_message(messages):
                             new_car.__class__ = SupervisorCar
                         cars[car_name_counter] = new_car
@@ -140,7 +139,6 @@ def main_simulation(graphic_environment, limit, *args, **kwargs):
                         coordination_log.info(log_string)
                     supervisor_car.set_log_messages([])
                 if collision:
-                    print collision_message
                     collision_log.info(collision_message)
                     collision = False
                     collision_message = ""
@@ -158,6 +156,8 @@ def main_simulation(graphic_environment, limit, *args, **kwargs):
                 supervisor_car = get_supervisor(cars.values())
                 if coordinator_fail(events):
                     supervisor_car.attack_supervisor = True
+                if coordinator_lies(events):
+                    supervisor_car.supervisor_lies = True
                 iteration = not check_close_application(events)
                 collision_wait = continue_simulation(events) or collision_wait
                 screen.blit(background, (0, 0))
