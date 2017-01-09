@@ -45,23 +45,23 @@ def see_collision(log):
                     coso.get_lane()) + " intention " + coso.get_intention() + " depth " + str(
                     coso.get_registered_caravan_depth()) + " following " + str(
                     coso.get_following_car_message().get_name() - first_car_name + 1) + " supervisor " + str(
-                    coso.is_supervisor())
+                    coso.is_supervisor)
             print "Vehiculos al momento de la creacion:"
             for coso in cars_at_creation_of_collided_car[collided_cars[actual_collision][1].get_name()]:
                 print "Car " + str(coso.get_name() - first_car_name + 1) + " lane " + str(
                     coso.get_lane()) + " intention " + coso.get_intention() + " depth " + str(
                     coso.get_caravan_depth()) + " following " + str(
                     coso.get_following_car_message().get_name() - first_car_name + 1) + " supervisor " + str(
-                    coso.is_supervisor())
+                    coso.is_supervisor)
             printed = True
             print "\n"
 
         for car in actual_collision_cars:
             car.new_image()
             screen.blit(car.rotated_image, car.screen_car)
-            display_info_on_car(car, screen, font, first_car_name, "name", "following")
+            display_info_on_car(car, screen, font, 1)
         show_caravan(collisions_cars[actual_collision].values(), screen, font, collided_cars[actual_collision],
-                     screen.get_width(), first_car_name)
+                     screen.get_width(), 1)
         pygame.display.update(screen.get_rect())
         if continue_simulation(pygame.event.get()):
             printed = False
@@ -71,3 +71,4 @@ def see_collision(log):
                 (screen.get_width() / 3, screen.get_height() / 2))
     pygame.display.update(screen.get_rect())
     pygame.time.wait(2000)
+see_collision("_testing")

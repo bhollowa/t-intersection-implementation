@@ -39,7 +39,7 @@ def main_simulation(graphic_environment, limit, *args, **kwargs):
     collision_wait = False
     display_time_counter = 0
     lanes_waiting_time = [(0, 0), (0, 0), (0, 0), (0, 0)]
-    rate = 0.01
+    rate = 0.5
     number_of_lanes = 4
 
     infrastructure_supervisor = InfrastructureCar(-1)
@@ -124,7 +124,14 @@ def main_simulation(graphic_environment, limit, *args, **kwargs):
                 supervisor_car = get_supervisor(cars.values())
                 if supervisor_car is not None:
                     for message in supervisor_car.get_log_messages():
-                        log_string = '{"coordinated_car":' + str(message["coordinated_car"].get_name())
+                        message["coordinated_car"].set_x_position(cars[message["coordinated_car"].get_name()]
+                                                                  .get_x_position())
+                        message["coordinated_car"].set_y_position(cars[message["coordinated_car"].get_name()]
+                                                                  .get_y_position())
+                        message["coordinated_car"].set_direction(cars[message["coordinated_car"].get_name()]
+                                                                 .get_direction())
+                        message["coordinated_car"].set_speed(cars[message["coordinated_car"].get_name()].get_speed())
+                        log_string = '{"coordinated_car":' + message["coordinated_car"].to_json()
                         log_string += ',"car_order":['
                         for car in message["old_cars"]:
                             for old_car in cars.values():

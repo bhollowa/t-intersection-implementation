@@ -44,9 +44,7 @@ def simulate_collisions(log):
         collision_wait = True
         iteration = True
 
-        print [collided_cars_info[key][number].get_name() for number in range(2)]
-
-        for car in coordination_info[collided_cars_info[key][1].get_name()]:
+        for car in coordination_info[max(collided_cars_info[key][1].get_name(),collided_cars_info[key][0].get_name())]:
             car.new_image()
             cars.append(car)
 
@@ -84,8 +82,7 @@ def simulate_collisions(log):
                     car.set_new_messages([])
                     if not car.screen_car.colliderect(full_intersection_rect):
                         left_intersection_cars.append(car)
-                        for message in car.get_left_intersection_messages():
-                            new_messages.append(message)
+                        new_messages.append(car.get_left_intersection_messages())
                         # new_messages.append(LeftIntersectionMessage(car))
                         # if car.get_active_supervisor():
                         #     new_messages.insert(0, SupervisorLeftIntersectionMessage(car))
@@ -105,7 +102,7 @@ def simulate_collisions(log):
                 screen.blit(intersection_background, (0, 0))
                 for car in cars:
                     screen.blit(car.rotated_image, car.screen_car)
-                    display_info_on_car(car, screen, font, 1, "name", "following")
+                    display_info_on_car(car, screen, font, 1)
                 show_caravan(cars, screen, font, collided_cars, screen_width)
                 pygame.display.update(screen.get_rect())
             else:
@@ -117,3 +114,4 @@ def simulate_collisions(log):
                 (screen.get_width() / 3, screen.get_height() / 2))
     pygame.display.update(screen.get_rect())
     pygame.time.wait(2000)
+simulate_collisions("_testing")

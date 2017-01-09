@@ -83,8 +83,8 @@ def generate_coordination_info_from_file(coordination_file):
     coordination_info = {}
     for line in coordination_file:
         try:
-            coordination = JSONDecoder().decode(line[:len(line) - 2])['message']
-            coordination_info[coordination["coordinated_car"]] = []
+            coordination = JSONDecoder().decode(line[:len(line) - 2].replace("None", "-1"))['message']
+            coordination_info[coordination["coordinated_car"]["name"]] = []
             for car_information in coordination["car_order"]:
                 car = Car(car_information["name"], pos_x=car_information["actual_coordinates"]["x_coordinate"],
                           pos_y=car_information["actual_coordinates"]["y_coordinate"],
@@ -94,7 +94,16 @@ def generate_coordination_info_from_file(coordination_file):
                 car.set_origin_coordinates(car.get_lane())
                 car.set_registered_caravan_depth(car_information["actual_caravan_depth"])
                 car.set_following(True)
-                coordination_info[coordination["coordinated_car"]].append(car)
+                coordination_info[coordination["coordinated_car"]["name"]].append(car)
+            same_car = Car(coordination["coordinated_car"]["name"], pos_x=coordination["coordinated_car"]["actual_coordinates"]["x_coordinate"],
+                           pos_y=coordination["coordinated_car"]["actual_coordinates"]["y_coordinate"],
+                           absolute_speed=coordination["coordinated_car"]["speed"],
+                           direction=coordination["coordinated_car"]["actual_coordinates"]["direction"], lane=coordination["coordinated_car"]["lane"],
+                           intention=coordination["coordinated_car"]["intention"], creation_time=coordination["coordinated_car"]["creation_time"])
+            same_car.set_origin_coordinates(same_car.get_lane())
+            same_car.set_registered_caravan_depth(coordination["coordinated_car"]["actual_caravan_depth"])
+            same_car.set_following(True)
+            coordination_info[coordination["coordinated_car"]["name"]].append(same_car)
         except:
             print line
     return coordination_info
