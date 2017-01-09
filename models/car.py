@@ -1,11 +1,12 @@
 import os
-from math import pi, cos, sin, atan
+from math import pi, cos, sin, atan, ceil
 from pygame import image, transform
 from time import time
 import random
 from car_controllers import default_controller, follower_controller
 from models.message import Message, InfoMessage, FollowingCarMessage, LeftIntersectionMessage, \
-    SupervisorLeftIntersectionMessage, SecondAtChargeMessage, NewSupervisorMessage, NewCarMessage
+    SupervisorLeftIntersectionMessage, SecondAtChargeMessage, NewSupervisorMessage, FaultyCoordinationMessage, \
+    CorrectedCoordinationMessage
 
 images_directory = os.path.dirname(os.path.abspath(__file__)) + "/../images/"
 
@@ -48,6 +49,7 @@ class Car(object):
         self.absolute_speed = absolute_speed
         self.lane = lane
         self.intention = intention
+
         self.image = None
         self.rotated_image = None
         self.screen_car = None
@@ -58,14 +60,16 @@ class Car(object):
         self.attack_supervisor = False
         self.has_alternate_second_at_charge = False
         self.supervisor_lies = False
+        self.supervisor_is_lying = False
+
         self.control_law_value = 0
         self.last_virtual_distance = 0
         self.new_supervisor_name = -1
         self.registered_caravan_depth = 0
-        self.supervisor_is_lying = False
         self.supervisor_counter = 4  # A car is coordinated in 2 ticks. If a car isn't
         # coordinated in 4 ticks, the second at charge car will assume the supervisor isn't coordinating anymore.
         self.following_car_counter = 4  # same as up
+
         self.transmitter_receiver_dict = {}
         self.coordination_messages = {}
         self.cars_at_intersection = {}
@@ -74,6 +78,19 @@ class Car(object):
         self.log_messages = []
         self.new_cars_at_intersection_counter = []
         self.liar_supervisor_names = []
+        self.faulty_cars_names = []
+
+        self.faulty_coordinator_name = -1
+        self.faulty_coordinated_car_name = -1
+        self.faulty_following_car_name = -1
+        self.second_at_charge_name = -1
+        self.corrected_coordinated_car_name = -1
+        self.corrected_following_car_name = -1
+        self.faulty_coordination_supervisor_message = None
+        self.faulty_coordination_second_at_charge_message = None
+        self.total_cars_at_faulty_coordination = -1
+        self.coordination_counter_dict = {}
+        self.corrected_coordination_message = []
 
     def __eq__(self, other):
         """
@@ -275,11 +292,45 @@ class Car(object):
 
         return virtual_distance_value
 
+    def supervisor_level(self, new_car, attack=False):
+        """
+        Function that emulates the functioning of the supervisor level of the T-intersection coordination algorithm in a
+        distributed way.
+        As the original supervisor level, check if a new car needs to follow and "old" car at the intersection, but it
+        works with messages (received and sent info).
+        :param attack: if true, all cars will be set default controller, driving at maximum speed.
+        :param new_car: information of the new car at the intersection
+        """
+        log_string = {"coordinated_car": new_car}
+        if not attack:
+            old_cars = self.get_cars_at_intersection().values()
+            old_cars.sort(key=lambda car: car.get_name(), reverse=True)
+            old_cars.sort(key=lambda car: car.get_caravan_depth(), reverse=True)
+            log_string["old_cars"] = old_cars
+            following_car_message = None
+            for old_car in old_cars:
+                if new_car.cross_path(old_car.get_lane(), old_car.get_intention()) and \
+                                new_car.get_name() > old_car.get_name():
+                    log_string["selected_car"] = old_car
+                    self.get_log_messages().append(log_string)
+                    if self.supervisor_lies:
+                        bad_follower = old_cars[random.randint(0, len(old_cars) - 1)]
+                        following_car_message = FollowingCarMessage(bad_follower, new_car.get_name(), self.get_name())
+                    else:
+                        following_car_message = FollowingCarMessage(old_car, new_car.get_name(), self.get_name())
+                    new_car.start_following(following_car_message)
+                    self.get_new_messages().append(following_car_message)
+                    break
+            if not new_car.get_following():
+                following_car_message = FollowingCarMessage(None, new_car.get_name(), self.get_name())
+                self.get_new_messages().append(following_car_message)
+            return following_car_message
+
     def start_following(self, message):
         """
         Sets the variable follow to True to indicate that this car has started following another car. Also updates
         the information of the cars at the intersection.
-        :param message: message with the following info.
+        :param message: <FollowingCarMessage> message with the following info.
         """
         if self.get_name() == message.get_following_car_name():
             if message.get_name() != -1:
@@ -350,6 +401,9 @@ class Car(object):
         if left_intersection_message.get_name() in self.get_cars_at_intersection():
             del self.get_cars_at_intersection()[left_intersection_message.get_name()]
 
+        if left_intersection_message.get_name() in self.faulty_cars_names:
+            self.faulty_cars_names.remove(left_intersection_message.get_name())
+
         # update following car information
         for car in cars_at_intersection:
             following_car_name = car.get_following_car_message().get_name()
@@ -362,6 +416,75 @@ class Car(object):
         if left_intersection_message.get_name() in self.transmitter_receiver_dict:
             del self.transmitter_receiver_dict[left_intersection_message.get_name()]
 
+    def check_coordination(self, faulty_coordination_message):
+        """
+        Check the information of a recently processed coordination that's supposed to be faulty.
+        To do this, first the car recreates all the process of coordination of all the cars at the intersection.
+        For the last car coordinated, the car will generate a message with the results of the full coordination
+        process.
+        :param faulty_coordination_message: message with the information required to check if the coordination is
+        correct.
+        """
+        self.set_faulty_coordination_supervisor_message(faulty_coordination_message.get_supervisor_message())
+        self.set_faulty_coordination_second_at_charge_message(faulty_coordination_message.get_second_at_charge_message())
+        cars_at_intersection = {}
+        actual_cars_at_intersection = faulty_coordination_message.get_cars_at_intersection().values()
+        self.set_total_cars_at_faulty_coordination(len(actual_cars_at_intersection))
+        actual_cars_at_intersection.sort(key=lambda old_car: old_car.get_name())
+        faulty_coordinated_car = None
+        total_cars = 0
+        for car in actual_cars_at_intersection:
+            total_cars += 1
+            if car.get_name() == faulty_coordination_message.get_faulty_coordinated_car_name():
+                faulty_coordinated_car = Car(car.get_name(), lane=car.get_lane(), intention=car.get_intention(),
+                                             creation_time=car.get_creation_time())
+                break
+            new_car = Car(car.get_name(), lane=car.get_lane(), intention=car.get_intention(),
+                          creation_time=car.get_creation_time())
+            following_car_message = self.supervisor_level(new_car, False)
+            if following_car_message in self.get_new_messages():
+                self.get_new_messages().remove(following_car_message)
+            cars_at_intersection[new_car.get_name()] = new_car
+        corrected_following_car_message = self.supervisor_level(faulty_coordinated_car, False)
+        if corrected_following_car_message in self.get_new_messages():
+            self.get_new_messages().remove(corrected_following_car_message)
+        self.set_faulty_coordinator_name(faulty_coordination_message.get_coordinator_name())
+        self.set_second_at_charge_name(faulty_coordination_message.get_second_at_charge_name())
+        self.set_corrected_coordinated_car_name(faulty_coordinated_car.get_name())
+        self.set_corrected_following_car_name(corrected_following_car_message.get_name()
+                                              if corrected_following_car_message is not None else -1)
+        self.get_new_messages().append(CorrectedCoordinationMessage(self))
+
+    def check_faulty_coordination(self, message):
+        """
+        Checks the messages generated after a faulty coordination message. When the last one is received, the car check
+        who sent faulty information: if the supervisor or the second at charge. This information is stored.
+        :param message: <CorrectedCoordinationMessage> Message generated by every car at the intersection when a faulty
+        coordination message is receibed.
+        """
+        correct_coordination_counter = self.get_coordination_counter_dict()
+        received_messages = self.get_corrected_coordination_messages()
+        received_messages.append(message)
+        if not message.get_following_car_name() in correct_coordination_counter:
+            correct_coordination_counter[message.get_following_car_name()] = 0
+        correct_coordination_counter[message.get_following_car_name()] += 1
+        if len(received_messages) == self.get_total_cars_at_faulty_coordination():
+            correct_following_car_name, number_of_votes = sorted([(car_name, correct_coordination_counter[car_name])
+                                                                  for car_name in correct_coordination_counter],
+                                                                 key=lambda pair: pair[1], reverse=True)[0]
+            if number_of_votes >= ceil(self.get_total_cars_at_faulty_coordination()/2.0):
+                if correct_following_car_name == self.get_faulty_coordination_supervisor_message().get_name():
+                    self.faulty_cars_names.append(self.get_faulty_coordination_second_at_charge_message()
+                                                  .get_coordinator_name())
+                elif correct_following_car_name == self.get_faulty_coordination_second_at_charge_message().get_name():
+                    self.faulty_cars_names.append(self.get_faulty_coordination_supervisor_message()
+                                                  .get_coordinator_name())
+            if self.get_name() == self.get_faulty_coordination_second_at_charge_message().get_following_car_name():
+                self.start_following(FollowingCarMessage(Car(correct_following_car_name),
+                                                         self.get_name(), self.get_name()))
+            self.set_coordination_counter_dict({})
+            self.set_corrected_coordination_messages([])
+
     def make_supervisor(self, new_supervisor_message):
         """
         Makes this car the supervisor of the intersection.
@@ -373,6 +496,7 @@ class Car(object):
             self.get_cars_at_intersection()[car_name] = new_supervisor_message.get_cars_at_intersection()[car_name]
             self.update_cars_at_intersection_counter[car_name] = 4
         self.set_transmitter_receiver_dict(new_supervisor_message.get_transmitter_receiver_dict())
+        self.faulty_cars_names = new_supervisor_message.faulty_cars_names
 
     def make_second_at_charge(self, second_at_charge_message):
         """
@@ -916,6 +1040,162 @@ class Car(object):
         """
         self.supervisor_is_lying = supervisor_is_lying
 
+    def get_faulty_coordinator_name(self):
+        """
+        Returns the name of the coordinator that didn't realized a good coordination.
+        :return: <int>
+        """
+        return self.faulty_coordinator_name
+
+    def set_faulty_coordinator_name(self, coordinator_name):
+        """
+        Sets the name of the supervisor car that did a faulty coordination.
+        :param coordinator_name: <int
+        """
+        self.faulty_coordinator_name = coordinator_name
+
+    def get_faulty_coordinated_car_name(self):
+        """
+        Gets the name of the faulty coordinated car.
+        :return: <int>
+        """
+        return self.faulty_coordinated_car_name
+
+    def set_faulty_coordinated_car_name(self, coordinated_car_name):
+        """
+        Sets the name of the car that was faulty coordinated.
+        :param coordinated_car_name: <int>
+        """
+        self.faulty_coordinated_car_name = coordinated_car_name
+
+    def get_faulty_following_car_name(self):
+        """
+        Gets the name of the car that the faulty coordinated car should follow.
+        :return: <int>
+        """
+        return self.faulty_following_car_name
+
+    def set_faulty_following_car_name(self, following_car_name):
+        """
+        Sets the name of the car that the faulty coordinated car should follow.
+        :param following_car_name: <int>
+        """
+        self.faulty_following_car_name = following_car_name
+
+    def set_second_at_charge_name(self, second_at_charge_name):
+        """
+        Sets the name of the car with the rol second at charge. Used to know who is giving faulty information: if the
+        supervisor or the second at charge.
+        :param second_at_charge_name: <int> name of the second at charge car
+        """
+        self.second_at_charge_name = second_at_charge_name
+
+    def get_second_at_charge_name(self):
+        """
+        Returns the name of the car with the rol of second at charge.
+        :return: <int>
+        """
+        return self.second_at_charge_name
+
+    def set_corrected_coordinated_car_name(self, coordinated_car_name):
+        """
+        Sets the name of the faulty coordinated car name.
+        :param coordinated_car_name: <int> name of the faulty coordinated car.
+        """
+        self.corrected_coordinated_car_name = coordinated_car_name
+
+    def get_corrected_coordinated_car_name(self):
+        """
+        Gets the name of the faulty coordinated car.
+        :return: <int>
+        """
+        return self.corrected_coordinated_car_name
+
+    def set_corrected_following_car_name(self, corrected_following_car_name):
+        """
+        Sets the name of the car that the faulty coordinated car should follow.
+        :param corrected_following_car_name: <int> name of the carrrected following car name
+        """
+        self.corrected_following_car_name = corrected_following_car_name
+
+    def get_corrected_following_car_name(self):
+        """
+        Gets the name of the corrected following car name for the faulty coordinated car.
+        :return: <int>
+        """
+        return self.corrected_following_car_name
+
+    def set_faulty_coordination_supervisor_message(self, message):
+        """
+        Sets the message generated by the supervisor resulting in a faulty coordination.
+        :param message: <FollowingCarMessage> Message generated by the supervisor
+        """
+        self.faulty_coordination_supervisor_message = message
+
+    def get_faulty_coordination_supervisor_message(self):
+        """
+        Gets the message generated by the supervisor resulting in a faulty coordination.
+        :return: <FollowingCarMessage>
+        """
+        return self.faulty_coordination_supervisor_message
+
+    def set_faulty_coordination_second_at_charge_message(self, message):
+        """
+        Sets the message generated by the second at charge resulting in a faulty coordination.
+        :param message: <FollowingCarMessage> Message generated by the second at charge.
+        """
+        self.faulty_coordination_second_at_charge_message = message
+
+    def get_faulty_coordination_second_at_charge_message(self):
+        """
+        Gets the message generated by the second at charge resulting in a faulty coordination.
+        :return: <FollowingCarMessage>
+        """
+        return self.faulty_coordination_second_at_charge_message
+
+    def set_total_cars_at_faulty_coordination(self, number_of_cars):
+        """
+        Sets the number total number of cars present at the intersection when the faulty coordination occurred.
+        :param number_of_cars: <int>
+        """
+        self.total_cars_at_faulty_coordination = number_of_cars
+
+    def get_total_cars_at_faulty_coordination(self):
+        """
+        Gets the number total number of cars present at the intersection when the faulty coordination occurred.
+        :return: <int>
+        """
+        return self.total_cars_at_faulty_coordination
+
+    def get_coordination_counter_dict(self):
+        """
+        Returns a dictionary with the information of a corrected coordination. The dictionary by key has the name of
+        the correct following car name and by value the number of cars that voted for that car.
+        :return: <dict>
+        """
+        return self.coordination_counter_dict
+
+    def set_coordination_counter_dict(self, new_dict):
+        """
+        Sets the dict to a new value.
+        :param new_dict: <dict>
+        """
+        self.coordination_counter_dict = {}
+
+    def get_corrected_coordination_messages(self):
+        """
+        Returns the list of a corrected coordination process.
+        :return: <list>
+        """
+        return self.corrected_coordination_message
+
+    def set_corrected_coordination_messages(self, new_list):
+        """
+        Set the list of corrected coordination to a new list.
+        :param new_list: <list>
+        """
+        self.corrected_coordination_message = []
+
 
 class SupervisorCar(Car):
     """
@@ -933,40 +1213,6 @@ class SupervisorCar(Car):
                     del self.cars_at_intersection[key]
         for car_name in deleted_cars:
             del self.update_cars_at_intersection_counter[car_name]
-
-    def supervisor_level(self, new_car, attack=False):
-        """
-        Function that emulates the functioning of the supervisor level of the T-intersection coordination algorithm in a
-        distributed way.
-        As the original supervisor level, check if a new car needs to follow and "old" car at the intersection, but it
-        works with messages (received and sent info).
-        :param attack: if true, all cars will be set default controller, driving at maximum speed.
-        :param new_car: information of the new car at the intersection
-        """
-        log_string = {"coordinated_car": new_car}
-        if not attack:
-            old_cars = self.get_cars_at_intersection().values()
-            old_cars.sort(key=lambda car: car.get_name(), reverse=True)
-            # old_cars.sort(key=lambda car: car.get_caravan_depth(), reverse=True)
-            log_string["old_cars"] = old_cars
-            following_car_message = None
-            for old_car in old_cars:
-                if new_car.cross_path(old_car.get_lane(), old_car.get_intention()) and \
-                        new_car.get_name() > old_car.get_name():
-                    log_string["selected_car"] = old_car
-                    self.get_log_messages().append(log_string)
-                    if self.supervisor_lies:
-                        bad_follower = old_cars[random.randint(0, len(old_cars)-1)]
-                        following_car_message = FollowingCarMessage(bad_follower, new_car.get_name(), self.get_name())
-                    else:
-                        following_car_message = FollowingCarMessage(old_car, new_car.get_name(), self.get_name())
-                    new_car.start_following(following_car_message)
-                    self.get_new_messages().append(following_car_message)
-                    break
-            if not new_car.get_following():
-                following_car_message = FollowingCarMessage(None, new_car.get_name(), self.get_name())
-                self.get_new_messages().append(following_car_message)
-            return following_car_message
 
     def add_new_car(self, new_car_message):
         """
@@ -991,7 +1237,7 @@ class SupervisorCar(Car):
                 self.has_second_at_charge = True
                 self.has_alternate_second_at_charge = True
                 self.get_new_messages().append(SecondAtChargeMessage(self, new_car.get_name()))
-            if not self.has_alternate_second_at_charge:
+            elif not self.has_alternate_second_at_charge:
                 self.has_alternate_second_at_charge = True
                 self.get_new_messages().append(SecondAtChargeMessage(self, new_car.get_name()))
 
@@ -1041,7 +1287,6 @@ class SecondAtChargeCar(SupervisorCar):
         :param new_car: information of the new car at the intersection
         """
         self.new_supervisor_name = new_car.get_name()
-        # if self.get_supervisor_left_intersection():
         following_car_message = super(SecondAtChargeCar, self).supervisor_level(new_car, attack)
         if not self.get_supervisor_left_intersection():
             self.get_new_messages().remove(following_car_message)
@@ -1056,10 +1301,9 @@ class SecondAtChargeCar(SupervisorCar):
         new_cars_at_intersection = self.get_new_cars_at_intersection()
         if self.get_supervisor_left_intersection():
             for car_name in new_cars_at_intersection:
-                print "segundo coordinando a " + str(car_name)
-                print self.get_cars_at_intersection()
                 self.supervisor_level(self.get_cars_at_intersection()[car_name])
             if self.new_supervisor_name != -1 and self.supervisor_counter <= 0:
+                print self.supervisor_counter
                 self.get_new_messages().append(NewSupervisorMessage(self))
                 self.set_supervisor_left_intersection(False)
                 self.new_supervisor_name = -1
@@ -1071,14 +1315,19 @@ class SecondAtChargeCar(SupervisorCar):
 
     def start_following(self, message):
         super(SecondAtChargeCar, self).start_following(message)
+        #  Delete car from not coordinated cars
         if message.get_following_car_name() in self.get_new_cars_at_intersection():
             self.get_new_cars_at_intersection().remove(message.get_following_car_name())
+        #  Check if coordinator did a correct coordination
         if message.get_following_car_name() in self.coordination_messages:
-            if message.get_name() != self.coordination_messages[message.get_following_car_name()].get_name():
-                self.get_new_messages().append(self.coordination_messages[message.get_following_car_name()])
-                self.set_supervisor_left_intersection(True)
-                self.set_supervisor_is_lying(True)
-                self.get_liar_supervisor_names().append(message.get_coordinator_name())
+            second_at_charge_following_message = self.coordination_messages[message.get_following_car_name()]
+            if message.get_name() != second_at_charge_following_message.get_name() and message.get_coordinator_name() \
+                    not in self.faulty_cars_names:
+                self.set_faulty_coordinator_name(message.get_coordinator_name())
+                self.set_faulty_coordinated_car_name(message.get_following_car_name())
+                self.set_faulty_following_car_name(message.get_name())
+                self.get_new_messages().append(FaultyCoordinationMessage(self, message,
+                                                                         second_at_charge_following_message))
             del self.coordination_messages[message.get_following_car_name()]
 
     def add_new_car(self, new_car_message):
@@ -1100,6 +1349,16 @@ class SecondAtChargeCar(SupervisorCar):
         """
         if not self.get_supervisor_is_lying():
             self.supervisor_counter = 4
+
+    def check_faulty_coordination(self, message):
+        """
+        Overrides the function to invalid the coordinator.
+        :param message: <CorrectedCoordinationMessage>
+        """
+        super(self.__class__, self).check_faulty_coordination(message)
+        if not self.get_name() in self.faulty_cars_names:
+            self.set_supervisor_left_intersection(True)
+            self.set_supervisor_is_lying(True)
 
     def get_supervisor_left_intersection(self):
         """
