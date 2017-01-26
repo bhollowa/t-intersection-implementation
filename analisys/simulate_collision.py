@@ -43,8 +43,8 @@ def simulate_collisions(log):
         new_messages = []
         collision_wait = True
         iteration = True
-
-        for car in coordination_info[max(collided_cars_info[key][1].get_name(),collided_cars_info[key][0].get_name())]:
+        print [str(car) for car in collided_cars_info[key]]
+        for car in coordination_info[max(collided_cars_info[key][1].get_name(), collided_cars_info[key][0].get_name())]:
             car.new_image()
             cars.append(car)
 
@@ -52,7 +52,8 @@ def simulate_collisions(log):
 
         for car in cars:
             messages.append(NewCarMessage(car))
-
+        print cars[0].get_name()
+        cars[0].set_caravan_depth(0)
         for message in messages:
             message.process(infrastructure_supervisor)
             for car in cars:
@@ -62,7 +63,10 @@ def simulate_collisions(log):
         for message in messages:
             for car in cars:
                 message.process(car)
-
+        infrastructure_supervisor.set_new_messages([])
+        for car in cars:
+            if not car.get_following_car_name() in [cars[k].get_name() for k in range(len(cars))]:
+                car.set_caravan_depth(0)
         while iteration:
             if not collision_wait:
                 left_intersection_cars = []
@@ -114,4 +118,4 @@ def simulate_collisions(log):
                 (screen.get_width() / 3, screen.get_height() / 2))
     pygame.display.update(screen.get_rect())
     pygame.time.wait(2000)
-simulate_collisions("_testing")
+simulate_collisions("_new_not_distributed_fix_5")

@@ -526,7 +526,6 @@ class NewSupervisorMessage(Message):
         Gets the information to send this message to the new supervisor car.
         :param car: car which created the message.
         """
-        print "nuevo supervisor"
         super(self.__class__, self).__init__(car)
         self.cars_at_intersection = car.get_cars_at_intersection()
         self.new_supervisor_name = car.get_new_supervisor_name()

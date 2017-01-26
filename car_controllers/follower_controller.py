@@ -14,7 +14,7 @@ def follower_controller(car):
     headway_time = 0.7
     k_p = 0.2
     k_d = 0.7
-    stand_still_distance = car.get_car_length() * 7
+    stand_still_distance = car.get_car_length() * car.get_stand_still_param()
     if not car.get_following():
         car.set_controller(default_controller)
     car_message = car.get_following_car_message()

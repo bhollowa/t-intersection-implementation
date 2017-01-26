@@ -17,45 +17,57 @@ def see_collision(log):
     collisions_file = open(log_directory + "collisions" + log + ".log")
     coordination_file = open(log_directory + "coordination" + log + ".log")
 
+    print "Creating cars"
     all_cars = generate_left_intersection_cars_from_file(all_cars_file)
+    print "Finished creating cars. Loading collisions."
     collisions_cars, collided_cars = generate_collision_cars_from_file(collisions_file, all_cars)
+    print "Finished loading of collisions. Loading coordination_info"
     coordination_info = generate_coordination_info_from_file(coordination_file)
+    print "Finished"
+
     cars_at_creation_of_collided_car = {}
     all_cars_values = all_cars.values()
     for collided_car in collided_cars.values():
         cars_at_creation_of_collided_car[collided_car[1].get_name()] = []
         for car in all_cars_values:
-            if car.get_name() <= collided_car[1].get_name() and car.get_left_intersection_time() > collided_car[1].get_creation_time():
+            if car.get_name() <= collided_car[1].get_name() and car.get_left_intersection_time() > collided_car[
+                1].get_creation_time():
                 cars_at_creation_of_collided_car[collided_car[1].get_name()].append(car)
     screen, background, intersection_background, font = init_graphic_environment(1468, 768)
     actual_collision = 0
     printed = False
+    false_positive_counter = 0
+    false_positive = False
+
     while actual_collision < len(collisions_cars.keys()):
         screen.blit(background, (0, 0))
         screen.blit(intersection_background, (0, 0))
         actual_collision_cars = sorted(collisions_cars[actual_collision].values(), key=lambda car: car.get_name())
         first_car_name = actual_collision_cars[0].get_name()
 
-        if not printed:
-            print "Vehiculos colisionados: " + str(collided_cars[actual_collision][1].get_name()) + " y " + str(
-                collided_cars[actual_collision][0].get_name())
-            print "Orden de vehiculos en coordinacion:\n"
-            for coso in coordination_info[collided_cars[actual_collision][1].get_name()]:
-                print "Car " + str(coso.get_name() - first_car_name + 1) + " lane " + str(
-                    coso.get_lane()) + " intention " + coso.get_intention() + " depth " + str(
-                    coso.get_registered_caravan_depth()) + " following " + str(
-                    coso.get_following_car_message().get_name() - first_car_name + 1) + " supervisor " + str(
-                    coso.is_supervisor)
-            print "Vehiculos al momento de la creacion:"
-            for coso in cars_at_creation_of_collided_car[collided_cars[actual_collision][1].get_name()]:
-                print "Car " + str(coso.get_name() - first_car_name + 1) + " lane " + str(
-                    coso.get_lane()) + " intention " + coso.get_intention() + " depth " + str(
-                    coso.get_caravan_depth()) + " following " + str(
-                    coso.get_following_car_message().get_name() - first_car_name + 1) + " supervisor " + str(
-                    coso.is_supervisor)
-            printed = True
-            print "\n"
-
+        # if not printed:
+        #     print "Vehiculos colisionados: " + str(collided_cars[actual_collision][1].get_name()) + " y " + str(
+        #             collided_cars[actual_collision][0].get_name())
+        #     print "Orden de vehiculos en coordinacion:\n"
+        #     try:
+        #         for coso in coordination_info[collided_cars[actual_collision][1].get_name()]:
+        #             print "Car " + str(coso.get_name() - first_car_name + 1) + " lane " + str(
+        #                     coso.get_lane()) + " intention " + coso.get_intention() + " depth " + str(
+        #                     coso.get_registered_caravan_depth()) + " following " + str(
+        #                     coso.get_following_car_message().get_name() - first_car_name + 1) + " supervisor " + str(
+        #                     coso.is_supervisor)
+        #     except KeyError:
+        #         actual_collision += 1
+        #         pass
+        #     print "Vehiculos al momento de la creacion:"
+        #     for coso in cars_at_creation_of_collided_car[collided_cars[actual_collision][1].get_name()]:
+        #         print "Car " + str(coso.get_name() - first_car_name + 1) + " lane " + str(
+        #                 coso.get_lane()) + " intention " + coso.get_intention() + " depth " + str(
+        #                 coso.get_caravan_depth()) + " following " + str(
+        #                 coso.get_following_car_message().get_name() - first_car_name + 1) + " supervisor " + str(
+        #                 coso.is_supervisor)
+        #     printed = True
+        #     print "\n"
         for car in actual_collision_cars:
             car.new_image()
             screen.blit(car.rotated_image, car.screen_car)
@@ -63,12 +75,28 @@ def see_collision(log):
         show_caravan(collisions_cars[actual_collision].values(), screen, font, collided_cars[actual_collision],
                      screen.get_width(), 1)
         pygame.display.update(screen.get_rect())
+        false_positive = (collided_cars[actual_collision][0].get_intention() == "r" and
+                          collided_cars[actual_collision][1].get_intention() == "l" or
+                          collided_cars[actual_collision][0].get_intention() == "l" and
+                          collided_cars[actual_collision][1].get_intention() == "r") and \
+                          abs((collided_cars[actual_collision][0].get_lane() -
+                               collided_cars[actual_collision][1].get_lane()) % 2 == 1)
         if continue_simulation(pygame.event.get()):
+            if false_positive:
+                false_positive_counter += 1
             printed = False
+            print "Actual false_positive: " + str(false_positive_counter) + ".\nActual collisions: " + \
+                  str(actual_collision + 1) + "\nActual aprox ticks: " + str(collided_cars[actual_collision][0].
+                                                                             get_creation_time()) + \
+                  "\nActual car: " + str(collided_cars[actual_collision][0].get_name())
+            collisions_cars[actual_collision] = None
             actual_collision += 1
+    print "Final number of false_positive: " + str(false_positive_counter)
     screen.blit(background, (0, 0))
     screen.blit(font.render("No hay mas colisiones para analizar", True, (0, 0, 0)),
                 (screen.get_width() / 3, screen.get_height() / 2))
     pygame.display.update(screen.get_rect())
     pygame.time.wait(2000)
-see_collision("_testing")
+
+
+see_collision("_new_speed_test_distance_11_speed_20")

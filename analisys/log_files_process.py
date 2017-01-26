@@ -45,7 +45,7 @@ def generate_collision_cars_from_file(collisions_file, all_cars):
     collided_cars = {}
     counter = 0
     for line in collisions_file:
-        collision_information = JSONDecoder().decode(line[:len(line) - 2])['message']
+        collision_information = JSONDecoder().decode(line[:len(line) - 2].replace("None", "-1"))['message']
         collided_cars_information = collision_information["collided_cars"]
         collisions_cars[counter] = {}
         collision_cars = collisions_cars[counter]

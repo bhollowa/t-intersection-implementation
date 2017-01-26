@@ -84,7 +84,7 @@ def coordinator_lies(user_input):
     return False
 
 
-def random_car(name, min_speed, max_speed, creation_time, number_of_lanes, **kwargs):
+def random_car(name, min_speed, max_speed, creation_time, number_of_lanes, fix, stand_still_param, **kwargs):
     """
     Generates a random car with the given name. The max speed is used to give an speed not giver than the maximum a the
     car. the lane can be passed in kwargs value if the lane wants to be specified.
@@ -95,6 +95,8 @@ def random_car(name, min_speed, max_speed, creation_time, number_of_lanes, **kwa
     :param min_speed: minimum speed of a car.
     :param max_speed: maximum speed of the car.
     :param kwargs: the lane can be passed in this argument in the "lane" argument.
+    :param fix: <boolean> boolean for the car to use the fix for the supervisory level or not.
+    :param stand_still_param: <int> number of times the lenght of the car is used for the stand still distance
     :return: a Car object.
     """
     if "lane" in kwargs:
@@ -103,6 +105,8 @@ def random_car(name, min_speed, max_speed, creation_time, number_of_lanes, **kwa
         new_lane = randint(0, number_of_lanes - 1)
         pos_x, pos_y, direction, lane = initial_positions[new_lane]
     initial_speed = randint(min_speed, max_speed)
+    if "initial_speed" in kwargs:
+        initial_speed = kwargs["initial_speed"]
     if "intention" in kwargs:
         intention = kwargs["intention"]
     else:
@@ -127,7 +131,7 @@ def random_car(name, min_speed, max_speed, creation_time, number_of_lanes, **kwa
                 if random_intention == 1:
                     intention = "l"
     return Car(name, pos_x, pos_y, direction=direction, lane=lane, absolute_speed=initial_speed,
-               intention=intention, creation_time=creation_time)
+               intention=intention, creation_time=creation_time, stand_still_param=stand_still_param, fix=fix)
 
 
 def colliding_cars(car_list):
@@ -299,11 +303,11 @@ def show_caravan(cars, screen, letter, collided_cars, screen_width, normalized=1
         else:
             not_leaders.append(car)
     leaders.sort(key=lambda real_car: real_car.get_name())
-    not_leaders.sort(key=lambda real_car: real_car.get_name())
     virtual_cars = []
     for i in range(len(leaders)):
         virtual_cars.append((leaders[i], pygame.Rect((screen_width - 100, 700 * (i + 1) / (len(leaders) + 1)), size)))
     not_leaders.sort(key=lambda not_leader_car: not_leader_car.get_name())
+    not_leaders.sort(key=lambda not_leader_car: not_leader_car.get_caravan_depth())
     for i in range(len(not_leaders)):
         for car in virtual_cars:
             if car[0].get_name() == not_leaders[i].get_following_car_name():
@@ -316,6 +320,7 @@ def show_caravan(cars, screen, letter, collided_cars, screen_width, normalized=1
                 break
 
     for car in virtual_cars:
+
         if collided_cars is not None:
             if car[0].get_name() == collided_cars[0].get_name() or car[0].get_name() == collided_cars[1].get_name():
                 screen.blit(collided_car_surface, car[1])
