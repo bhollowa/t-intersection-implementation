@@ -6,6 +6,7 @@ from auxiliary_functions.auxiliary_functions import check_close_application,\
 from models.message import NewCarMessage
 from models.car import Car, InfrastructureCar, SupervisorCar
 import numpy as np
+import logging
 
 
 def main_simulation(graphic_environment, limit, stand_still_param=5, fix=True,
@@ -17,9 +18,17 @@ def main_simulation(graphic_environment, limit, stand_still_param=5, fix=True,
     if "initial_speed" in kwargs:
         initial_speed = kwargs["initial_speed"]
     if log:
-        (collision_log, left_intersection_log,
-         total_cars_log, coordination_log) = create_logs(kwargs["log"])
-        collision_message = ""
+        log_name = kwargs["log"]
+        create_logs(log_name)
+        collision_log = logging.getLogger('collision{}'.format(log_name))
+        left_intersection_log = logging.getLogger(
+            'left_intersection{}'.format(log_name)
+        )
+        total_cars_log = logging.getLogger(
+            'numbers_of_cars{}'.format(log_name)
+        )
+        print 'coordination{}'.format(log_name)
+        coordination_log = logging.getLogger('coordination{}'.format(log_name))
     cars = {}
     iteration = True
     intersection_rect = pygame.Rect(280, 280, 210, 210)
@@ -148,6 +157,7 @@ def main_simulation(graphic_environment, limit, stand_still_param=5, fix=True,
                     collide and
                     collided_cars[0].screen_car.colliderect(intersection_rect)
                 )
+                collision_message_dict = {}
                 if (collide and car_in_intersection):
                     collision_code = "{}to{}".format(
                         collided_cars[0].get_name(),
@@ -158,25 +168,33 @@ def main_simulation(graphic_environment, limit, stand_still_param=5, fix=True,
                         collision_wait = True
                         collision_list.append(collision_code)
                         collisions += 1
-                        if log:
-                            collision_message = (
-                                '{"collision_code":" {}", '
-                                '"collision_initial_conditions":['
-                            ).format(collision_code)
-                            for car in cars.values():
-                                collision_message += car.to_json() + ','
-                            collision_message = (
-                                '{}],"collided_cars":['.format(
-                                    collision_message[
-                                        :len(collision_message)-1
-                                    ]
-                                )
-                            )
-                            for car in collided_cars:
-                                collision_message += car.to_json() + ','
-                            collision_message = '{}]}'.format(
-                                collision_message[:len(collision_message) - 1]
-                            )
+                        collision_message_dict["collision_code"] = (
+                            collision_code
+                        )
+                        collision_message_dict[
+                            "collision_initial_conditions"
+                        ] = [car.to_json() for car in cars.values]
+                        # collision_message = (
+                        #     '{"collision_code":" {}", '
+                        #     '"collision_initial_conditions":['
+                        # ).format(collision_code)
+                        # for car in cars.values():
+                        #     collision_message += car.to_json() + ','
+                        collision_message_dict['collided_cars'] = [
+                            [car.to_json() for car in collided_cars]
+                        ]
+                        # collision_message = (
+                        #     '{}],"collided_cars":['.format(
+                        #         collision_message[
+                        #             :len(collision_message)-1
+                        #         ]
+                        #     )
+                        # )
+                        # for car in collided_cars:
+                        #     collision_message += car.to_json() + ','
+                        # collision_message = '{}]}'.format(
+                        #     collision_message[:len(collision_message) - 1]
+                        # )
                 supervisor_car = get_supervisor(cars.values())
                 if supervisor_car is not None:
                     for message in supervisor_car.get_log_messages():
@@ -201,12 +219,11 @@ def main_simulation(graphic_environment, limit, stand_still_param=5, fix=True,
                                     message["coordinated_car"].get_name()
                                 ].get_speed()
                             )
-                            log_string = (
-                                '{"coordinated_car":{}'.format(
-                                    message["coordinated_car"].to_json()
-                                )
+                            log_message = {}
+                            log_message["coordinated_car"] = (
+                                message["coordinated_car"].to_json()
                             )
-                            log_string += ',"car_order":['
+                            log_message["car_order"] = []
                             for car in message["old_cars"]:
                                 for old_car in cars.values():
                                     if old_car.get_name() == car.get_name():
@@ -218,33 +235,29 @@ def main_simulation(graphic_environment, limit, stand_still_param=5, fix=True,
                                             old_car.get_direction())
                                         car.set_speed(old_car.get_speed())
                                         break
-                                log_string += car.to_json() + ","
-                            log_string = log_string[:len(log_string) - 1] + "]"
-                            log_string += ',"selected_car":{}}'.format(
+                                log_message["car_order"].append(car.to_json())
+                            log_message["selected_car"] = (
                                 message["selected_car"].to_json()
                             )
-                            coordination_log.info(log_string)
+                            coordination_log.info(log_message)
                         except KeyError:
                             pass
                     supervisor_car.set_log_messages([])
                 if collision:
-                    collision_log.info(collision_message)
+                    collision_log.info(str(collision_message_dict))
                     collision = False
-                    collision_message = ""
                     return -1
                 log_threshold_passed = (
                     car_name_counter % 250.0 == 0
                 )
                 cars_passed = counter % (60.0 / cars_per_second) == 0
                 if log_threshold_passed and cars_passed:
-                    message = '{"cars_simulated":{}}'.format(car_name_counter)
-                    total_cars_log.info(message)
-                log_message = "["
-                for car in left_intersection_cars_log:
-                    log_message += car.to_json() + ','
-                if len(log_message) > 1:
-                    log_message = log_message[:len(log_message)-1] + ']'
-                    left_intersection_log.info(log_message)
+                    message_dict = {"cars_simulated": car_name_counter}
+                    total_cars_log.info(message_dict)
+                if len(left_intersection_cars_log) > 1:
+                    left_intersection_log.info(
+                        [car.to_json() for car in left_intersection_cars_log]
+                    )
             if graphic_environment:
                 events = pygame.event.get()
                 supervisor_car = get_supervisor(cars.values())
@@ -322,7 +335,7 @@ distributed_param = ["", "", "distributed", "distributed"]
 #         ).format(i, car_limit)
 
 main_simulation(
-    True,
+    False,
     car_limit,
     5,
     True,

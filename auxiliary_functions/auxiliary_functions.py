@@ -250,11 +250,11 @@ def setup_logger(logger_name, log_file, level=logging.DEBUG):
 
 def create_logs(log_name):
     """
-    Function to create the logs of a simulation.
+    Function to create the logs for the simulation: collisions_log,
+    number_of_cars_simulated_log, cars_left_intersection_log and
+    coordination_log
     :param log_name: <string> name to store the logs (to difference them with
         the others).
-    :return: tuple with 3 logs in this order: collision, left_intersection,
-        total_cars.
     """
     setup_logger(
         "collision{}".format(log_name),
@@ -269,14 +269,8 @@ def create_logs(log_name):
         "{}left_intersection{}.log".format(logger_directory, log_name)
     )
     setup_logger(
-        "coordination".format(log_name),
+        "coordination{}".format(log_name),
         "{}coordination{}.log".format(logger_directory, log_name)
-    )
-    return (
-        logging.getLogger('collision{}'.format(log_name)),
-        logging.getLogger('left_intersection{}'.format(log_name)),
-        logging.getLogger('numbers_of_cars{}'.format(log_name)),
-        logging.getLogger('coordination{}'.format(log_name))
     )
 
 
