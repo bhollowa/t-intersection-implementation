@@ -143,37 +143,40 @@ def main_simulation(graphic_environment, limit, stand_still_param=5, fix=True,
             messages = new_messages
             new_messages = []
             collided_cars, collide = colliding_cars(cars.values())
-            car_in_intersection = (
-                collided_cars[0].screen_car.colliderect(intersection_rect)
-            )
-            if (collide and car_in_intersection):
-                collision_code = "{}to{}".format(
-                    collided_cars[0].get_name(),
-                    collided_cars[1].get_name()
+            if log:
+                car_in_intersection = (
+                    collide and
+                    collided_cars[0].screen_car.colliderect(intersection_rect)
                 )
-                if collision_code not in collision_list:
-                    collision = True
-                    collision_wait = True
-                    collision_list.append(collision_code)
-                    collisions += 1
-                    if log:
-                        collision_message = (
-                            '{"collision_code":" {}", '
-                            '"collision_initial_conditions":['
-                        ).format(collision_code)
-                        for car in cars.values():
-                            collision_message += car.to_json() + ','
-                        collision_message = (
-                            '{}],"collided_cars":['.format(
-                                collision_message[:len(collision_message)-1]
+                if (collide and car_in_intersection):
+                    collision_code = "{}to{}".format(
+                        collided_cars[0].get_name(),
+                        collided_cars[1].get_name()
+                    )
+                    if collision_code not in collision_list:
+                        collision = True
+                        collision_wait = True
+                        collision_list.append(collision_code)
+                        collisions += 1
+                        if log:
+                            collision_message = (
+                                '{"collision_code":" {}", '
+                                '"collision_initial_conditions":['
+                            ).format(collision_code)
+                            for car in cars.values():
+                                collision_message += car.to_json() + ','
+                            collision_message = (
+                                '{}],"collided_cars":['.format(
+                                    collision_message[
+                                        :len(collision_message)-1
+                                    ]
+                                )
                             )
-                        )
-                        for car in collided_cars:
-                            collision_message += car.to_json() + ','
-                        collision_message = '{}]}'.format(
-                            collision_message[:len(collision_message) - 1]
-                        )
-            if "log" in kwargs:
+                            for car in collided_cars:
+                                collision_message += car.to_json() + ','
+                            collision_message = '{}]}'.format(
+                                collision_message[:len(collision_message) - 1]
+                            )
                 supervisor_car = get_supervisor(cars.values())
                 if supervisor_car is not None:
                     for message in supervisor_car.get_log_messages():
@@ -318,23 +321,31 @@ distributed_param = ["", "", "distributed", "distributed"]
 #             "Standstill distance {} presented no collisions in {} cars."
 #         ).format(i, car_limit)
 
-main_simulation(True, car_limit, 5, True, "", "show_caravan")
-# , log="_standstill_distance_" + str(i))
-for stand_still_value in stand_still_distances:
-    for initial_speed in initial_speed_values[stand_still_value]:
-        print (
-            "Starting simulation _new_speed_test_distance_{}_speed_{}".format(
-                stand_still_value, initial_speed
-            )
-        )
-        main_simulation(
-            False,
-            car_limit,
-            stand_still_value,
-            True,
-            "",
-            initial_speed=initial_speed,
-            log="_new_speed_test_distance_{}_speed_{}".format(
-                stand_still_value, initial_speed
-            )
-        )
+main_simulation(
+    True,
+    car_limit,
+    5,
+    True,
+    "",
+    "show_caravan",
+    log="_standstill_distance_5"
+)
+# for stand_still_value in stand_still_distances:
+#     for initial_speed in initial_speed_values[stand_still_value]:
+#         print (
+#             "Starting simulation "
+#             "_new_speed_test_distance_{}_speed_{}".format(
+#                 stand_still_value, initial_speed
+#             )
+#         )
+#         main_simulation(
+#             False,
+#             car_limit,
+#             stand_still_value,
+#             True,
+#             "",
+#             initial_speed=initial_speed,
+#             log="_new_speed_test_distance_{}_speed_{}".format(
+#                 stand_still_value, initial_speed
+#             )
+#         )
