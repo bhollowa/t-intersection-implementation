@@ -27,7 +27,6 @@ def main_simulation(graphic_environment, limit, stand_still_param=5, fix=True,
         total_cars_log = logging.getLogger(
             'numbers_of_cars{}'.format(log_name)
         )
-        print 'coordination{}'.format(log_name)
         coordination_log = logging.getLogger('coordination{}'.format(log_name))
     cars = {}
     iteration = True
