@@ -1,18 +1,21 @@
 import pygame
 import os
-from log_files_process import generate_left_intersection_cars_from_file, generate_collision_cars_from_file, \
-    generate_coordination_info_from_file
-from auxiliary_functions.auxiliary_functions import display_info_on_car, show_caravan, init_graphic_environment, \
-    check_close_application, continue_simulation, colliding_cars
+from log_files_process import generate_left_intersection_cars_from_file, \
+    generate_collision_cars_from_file, generate_coordination_info_from_file
+from auxiliary_functions.auxiliary_functions import display_info_on_car, \
+    show_caravan, init_graphic_environment, check_close_application, \
+    continue_simulation, colliding_cars
 from models.car import Car, SupervisorCar
 from models.message import NewCarMessage
 
 
 def simulate_collisions(log):
     """
-    Simulates all the collisions of a log. Every simulation starts paused, pressing any key but ESC will start the
-    simulation. All the cars that were present when the second collided car was created will be at their positions with
-    their current speeds and directions. Pressing the ESC key will jump to the next collision, or end the simulation.
+    Simulates all the collisions of a log. Every simulation starts paused,
+    pressing any key but ESC will start the simulation. All the cars that were
+    present when the second collided car was created will be at their positions
+    with their current speeds and directions. Pressing the ESC key will jump to
+    the next collision, or end the simulation.
     :param log: <string> Name of the log with collisions.
     """
     log_directory = os.path.dirname(os.path.abspath(__file__)) + "/../logs/"
@@ -21,20 +24,36 @@ def simulate_collisions(log):
     coordination_file = open(log_directory + "coordination" + log + ".log")
 
     all_cars = generate_left_intersection_cars_from_file(all_cars_file)
-    collisions_cars, collided_cars_info = generate_collision_cars_from_file(collisions_file, all_cars)
+    collisions_cars, collided_cars_info = generate_collision_cars_from_file(
+        collisions_file, all_cars
+    )
     coordination_info = generate_coordination_info_from_file(coordination_file)
 
     collided_cars_info[0].sort(key=lambda this_car: this_car.get_name())
 
-    screen, background, intersection_background, font = init_graphic_environment(1468, 768)
+    screen, background, intersection_background, font = (
+        init_graphic_environment(1468, 768)
+    )
     full_intersection_rect = pygame.Rect(0, 0, 768, 768)
 
     infrastructure_supervisor = SupervisorCar(-1)
     # infrastructure_supervisor.set_active_supervisory(True)
     screen_width = 1468
     creation_dummy_cars = []
-    for coordinates in [(435, 760, 0, 0), (760, 345, 90, 1), (345, 10, 180, 2), (10, 435, 270, 3)]:
-        dummy_car = Car(-1, coordinates[0], coordinates[1], direction=coordinates[2], lane=coordinates[3])
+    initial_coordinates = [
+        (435, 760, 0, 0),
+        (760, 345, 90, 1),
+        (345, 10, 180, 2),
+        (10, 435, 270, 3)
+    ]
+    for coordinates in initial_coordinates:
+        dummy_car = Car(
+            -1,
+            coordinates[0],
+            coordinates[1],
+            direction=coordinates[2],
+            lane=coordinates[3]
+        )
         dummy_car.new_image()
         creation_dummy_cars.append(dummy_car)
     for key in collided_cars_info:
@@ -44,7 +63,11 @@ def simulate_collisions(log):
         collision_wait = True
         iteration = True
         print [str(car) for car in collided_cars_info[key]]
-        for car in coordination_info[max(collided_cars_info[key][1].get_name(), collided_cars_info[key][0].get_name())]:
+        newest_car_collisioned = max(
+            collided_cars_info[key][1].get_name(),
+            collided_cars_info[key][0].get_name()
+        )
+        for car in coordination_info[newest_car_collisioned]:
             car.new_image()
             cars.append(car)
 
@@ -65,16 +88,25 @@ def simulate_collisions(log):
                 message.process(car)
         infrastructure_supervisor.set_new_messages([])
         for car in cars:
-            if not car.get_following_car_name() in [cars[k].get_name() for k in range(len(cars))]:
+            if (not car.get_following_car_name() in
+                    [cars[k].get_name() for k in range(len(cars))]):
                 car.set_caravan_depth(0)
         while iteration:
             if not collision_wait:
                 left_intersection_cars = []
                 left_intersection_cars_log = []
-                messages.sort(key=lambda not_sorted_message: not_sorted_message.get_value(), reverse=True)
+                messages.sort(
+                    key=(
+                        lambda not_sorted_message: (
+                            not_sorted_message.get_value()
+                        )
+                    ),
+                    reverse=True
+                )
                 for message in messages:
                     message.process(infrastructure_supervisor)
-                for new_message in infrastructure_supervisor.get_new_messages():
+                new_messages = infrastructure_supervisor.get_new_messages()
+                for new_message in new_messages:
                     new_messages.append(new_message)
                 infrastructure_supervisor.set_new_messages([])
                 for car in cars:
@@ -86,10 +118,15 @@ def simulate_collisions(log):
                     car.set_new_messages([])
                     if not car.screen_car.colliderect(full_intersection_rect):
                         left_intersection_cars.append(car)
-                        new_messages.append(car.get_left_intersection_messages())
+                        new_messages.append(
+                            car.get_left_intersection_messages()
+                        )
                         # new_messages.append(LeftIntersectionMessage(car))
                         # if car.get_active_supervisor():
-                        #     new_messages.insert(0, SupervisorLeftIntersectionMessage(car))
+                        #     new_messages.insert(
+                        #       0,
+                        #       SupervisorLeftIntersectionMessage(car)
+                        #     )
                         if log:
                             left_intersection_cars_log.append(car)
                         continue
@@ -114,8 +151,12 @@ def simulate_collisions(log):
                 iteration = not check_close_application(events)
                 collision_wait = not continue_simulation(events)
     screen.blit(background, (0, 0))
-    screen.blit(font.render("No hay mas colisiones para analizar", True, (0, 0, 0)),
-                (screen.get_width() / 3, screen.get_height() / 2))
+    screen.blit(
+        font.render("No hay mas colisiones para analizar", True, (0, 0, 0)),
+        (screen.get_width() / 3, screen.get_height() / 2)
+    )
     pygame.display.update(screen.get_rect())
     pygame.time.wait(2000)
+
+
 simulate_collisions("_new_not_distributed_fix_5")

@@ -177,6 +177,6 @@ def generate_coordination_info_from_file(coordination_file):
             same_car.set_following(True)
             coordination_info[
                 coordination["coordinated_car"]["name"]].append(same_car)
-        except:
+        except KeyError:
             print line
     return coordination_info
