@@ -3,7 +3,8 @@ import pygame
 from datetime import datetime
 from json import JSONDecoder
 
-from auxiliary_functions.auxiliar_functions import create_car_from_json, colliding_cars, check_close_application, display_info_on_car
+from auxiliary_functions.auxiliar_functions import create_car_from_json, \
+    colliding_cars, check_close_application, display_info_on_car
 from car_controllers.follower_controller import follower_controller
 
 images_directory = os.path.dirname(os.path.abspath(__file__)) + "/../images/"
@@ -11,15 +12,23 @@ images_directory = os.path.dirname(os.path.abspath(__file__)) + "/../images/"
 
 def create_cars_from_collision_json(collision_json):
     """
-    Creates all the cars stored in a json-string reporting a collision. The json must have the form
-    {"time":<string with specified format>, "message":{"collision_code":<string>,
-    "collision_initial_conditions":<list of cars>}}. All followers have been assigned.
+    Creates all the cars stored in a json-string reporting a collision. The
+    json must have the form:
+    {
+        "time":<string with specified format>,
+        "message":{
+            "collision_code":<string>,
+            "collision_initial_conditions":<list of cars>
+        }
+    }.
+    All followers have been assigned.
     Time format: "%Y-%m-%d %H:%M:%S,%f".
     :param collision_json: <string> json with a collision report.
     :return: dictionary with the cars. The key value is the name of the car.
     """
     collision_information = JSONDecoder().decode(collision_json)
-    json_cars = collision_information["message"]["collision_initial_conditions"]
+    json_cars = collision_information[
+        "message"]["collision_initial_conditions"]
     cars_dict = {}
     for json_car in json_cars:
         cars_dict[json_car["car_name"]] = create_car_from_json(json_car)
@@ -34,20 +43,36 @@ def create_cars_from_collision_json(collision_json):
 
 def create_times_from_collision_json(collision_json):
     """
-    Obtains all the times at which all the cars stored in the collision json -string entered the intersection (or where
-    created). The json must have the form {"time":<string with specified format>, "message":{"collision_code":<string>,
-    "collision_initial_conditions":<list of cars>}}. Also returns the time at which the collision in the jason should
-    start. Time format: "%Y-%m-%d %H:%M:%S,%f".
+    Obtains all the times at which all the cars stored in the collision json
+    -string entered the intersection (or where created). The json must have the
+    form:
+    {
+        "time":<string with specified format>,
+        "message":{
+            "collision_code":<string>,
+            "collision_initial_conditions":<list of cars>
+        }
+    }.
+    Also returns the time at which the collision in the jason should start.
+    Time format: "%Y-%m-%d %H:%M:%S,%f".
     :param collision_json: <string >json with a collision report.
     :return: dictionary with the cars. The key value is the name of the car.
     """
     collision_information = JSONDecoder().decode(collision_json)
-    json_cars = collision_information["message"]["collision_initial_conditions"]
+    json_cars = collision_information[
+        "message"]["collision_initial_conditions"]
     time_format = '%Y-%m-%d %H:%M:%S,%f'
-    collision_time = datetime.strptime(collision_information["time"], time_format)
+    collision_time = datetime.strptime(
+        collision_information["time"], time_format
+    )
     car_creation_times = []
     for json_car in json_cars:
-        car_creation_times.append((datetime.fromtimestamp(json_car["creation_time"]), json_car["car_name"]))
+        car_creation_times.append(
+            (
+                datetime.fromtimestamp(json_car["creation_time"]),
+                json_car["car_name"]
+            )
+        )
     car_creation_times.sort(key=lambda x: x[0])
     start_simulation_time = collision_time
     for car_time in car_creation_times:
@@ -58,12 +83,15 @@ def create_times_from_collision_json(collision_json):
 
 def recreate_collision(collision_json, graphic):
     """
-    Function to recreate a collision. The collision json must be a string with json format. If graphic is True, graphic
-    environment will be displayed.
-    :param collision_json: <string> string in json format with collision information.
+    Function to recreate a collision. The collision json must be a string with
+    json format. If graphic is True, graphic environment will be displayed.
+    :param collision_json: <string> string in json format with collision
+        information.
     :param graphic: <boolean> show or not show graphic environment.
     """
-    start_simulation_time, car_creation_times = create_times_from_collision_json(collision_json)
+    start_simulation_time, car_creation_times = (
+        create_times_from_collision_json(collision_json)
+    )
     cars_dict = create_cars_from_collision_json(collision_json)
     car_creation_counter = 0
     collisions = 0
@@ -86,10 +114,15 @@ def recreate_collision(collision_json, graphic):
     while True:
         enough_cars = car_creation_counter < len(car_creation_times)
         if enough_cars:
-            time_in = car_creation_times[car_creation_counter][
-                          0] - start_simulation_time < datetime.now() - recreation_start_time
+            time_in = car_creation_times[
+                car_creation_counter
+            ][0] - (
+                start_simulation_time < datetime.now() - recreation_start_time
+            )
             if time_in:
-                cars.append(cars_dict[car_creation_times[car_creation_counter][1]])
+                cars.append(
+                    cars_dict[car_creation_times[car_creation_counter][1]]
+                )
                 car_creation_counter += 1
         if graphic:
             events = pygame.event.get()

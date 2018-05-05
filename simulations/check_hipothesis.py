@@ -10,7 +10,9 @@ for line in reading_file:
 file_string = file_string[:len(file_string)-2] + "]"
 json_collisions = JSONDecoder().decode(file_string)
 
-collision_positions = ["1132", "1134", "2241", "2243", "3312", "3314", "4421", "4423"]
+collision_positions = [
+    "1132", "1134", "2241", "2243", "3312", "3314", "4421", "4423"
+]
 positive = 0
 for json_collision in json_collisions:
     ble = False
