@@ -3,13 +3,23 @@ from math import pi, cos, sin, atan
 
 class Message(object):
     """
-    Message object that can be created from a car. If no car is given, the message will have an "invalid" car name
-    (a negative one).
-    The message can give the distance to the center of the car from it was created (based on the information given).
+    Message object that can be created from a car. If no car is given, the
+    message will have an "invalid" car name (a negative one).
+    The message can give the distance to the center of the car from it was
+    created (based on the information given).
     """
-    value_dict = {"SupervisorLeftIntersectionMessage": 5, "LeftIntersectionMessage": 2, "NewCarMessage": 1,
-                  "InfoMessage": 0, "FollowingCarMessage": 0, "Message": 0, "SecondAtChargeMessage": 4,
-                  "NewSupervisorMessage": 3, "FaultyCoordinationMessage": 6, "CorrectedCoordinationMessage": 6}
+    value_dict = {
+        "SupervisorLeftIntersectionMessage": 5,
+        "LeftIntersectionMessage": 2,
+        "NewCarMessage": 1,
+        "InfoMessage": 0,
+        "FollowingCarMessage": 0,
+        "Message": 0,
+        "SecondAtChargeMessage": 4,
+        "NewSupervisorMessage": 3,
+        "FaultyCoordinationMessage": 6,
+        "CorrectedCoordinationMessage": 6
+    }
 
     def __init__(self, car=None):
         """
@@ -49,7 +59,10 @@ class Message(object):
         Generates a string that describes this message.
         :return: <string>
         """
-        return self.__class__.__name__ + " From " + str(self.get_name()) + " depth " + str(self.get_caravan_depth())
+        _str = "{} From {} depth {}".format(
+            self.__class__.__name__, self.get_name(), self.get_caravan_depth()
+        )
+        return _str
 
     def virtual_distance(self):
         """
@@ -64,40 +77,67 @@ class Message(object):
         if self.get_intention() == "s":
             virtual_distance_value = self.get_virtual_x_position()
         elif self.get_intention() == "r":
-            if self.get_virtual_x_position() <= initial_straight_section:  # Calculate real virtual distance
+            # Calculate real virtual distance
+            if self.get_virtual_x_position() <= initial_straight_section:
                 virtual_distance_value = self.get_virtual_x_position()
             elif self.get_virtual_y_position() > -right_turn_radio:
-                virtual_distance_value = initial_straight_section + atan(
-                    (self.get_virtual_x_position() - initial_straight_section) / (
-                        right_turn_radio + self.get_virtual_y_position())) * right_turn_radio
+                virtual_distance_value = (
+                    initial_straight_section + atan(
+                        (
+                            self.get_virtual_x_position() -
+                            initial_straight_section
+                        ) / (right_turn_radio + self.get_virtual_y_position())
+                    ) * right_turn_radio
+                )
             else:
-                virtual_distance_value = initial_straight_section + pi * right_turn_radio / 2.0 - \
-                                         self.get_virtual_y_position() - right_turn_radio
+                virtual_distance_value = (
+                    initial_straight_section + pi * right_turn_radio / 2.0 -
+                    self.get_virtual_y_position() - right_turn_radio
+                )
 
             a = path_width / 2.0
             b = right_turn_radio + path_width / 4.0
             c = pi * right_turn_radio / 2.0
-            if virtual_distance_value <= initial_straight_section + c:  # Scale virtual distance
-                virtual_distance_value *= (initial_straight_section + a + b) / (initial_straight_section + c)
+            # Scale virtual distance
+            if virtual_distance_value <= initial_straight_section + c:
+                virtual_distance_value *= (
+                    (initial_straight_section + a + b) /
+                    (initial_straight_section + c)
+                )
             else:
                 virtual_distance_value += a + b - c
 
         else:
-            if self.get_virtual_x_position() <= initial_straight_section:  # Calculate real virtual distance
+            # Calculate real virtual distance
+            if self.get_virtual_x_position() <= initial_straight_section:
                 virtual_distance_value = self.get_virtual_x_position()
             elif self.get_virtual_y_position() < left_turn_radio:
-                virtual_distance_value = initial_straight_section + atan(
-                    (self.get_virtual_x_position() - initial_straight_section) / (
-                        left_turn_radio - self.get_virtual_y_position())) * left_turn_radio
+                virtual_distance_value = (
+                    initial_straight_section + atan(
+                        (
+                            self.get_virtual_x_position() -
+                            initial_straight_section
+                        ) / (
+                            left_turn_radio -
+                            self.get_virtual_y_position()
+                            )
+                        ) * left_turn_radio
+                    )
             else:
-                virtual_distance_value = initial_straight_section + pi * left_turn_radio / 2 + \
-                                         self.get_virtual_y_position() - left_turn_radio
+                virtual_distance_value = (
+                    initial_straight_section + pi * left_turn_radio / 2 +
+                    self.get_virtual_y_position() - left_turn_radio
+                )
 
             a = path_width / 2
             b = right_turn_radio + path_width / 4
             c = pi * left_turn_radio / 2
-            if virtual_distance_value <= initial_straight_section + c:  # Scale virtual distance
-                virtual_distance_value *= (initial_straight_section + a + b) / (initial_straight_section + c)
+            # Scale virtual distance
+            if virtual_distance_value <= initial_straight_section + c:
+                virtual_distance_value *= (
+                    (initial_straight_section + a + b) /
+                    (initial_straight_section + c)
+                )
             else:
                 virtual_distance_value += a + b - c
 
@@ -105,8 +145,9 @@ class Message(object):
 
     def is_new(self):
         """
-        Check if the car that created this message is new at the intersection. a car is new at an intersection if it
-        hasn't been analyzed by a supervisory level.
+        Check if the car that created this message is new at the intersection.
+        A car is new at an intersection if it hasn't been analyzed by a
+        supervisory level.
         :return: True if the car is new at the intersection. False otherwise.
         """
         return self.new
@@ -213,8 +254,14 @@ class Message(object):
         Returns the x position of the virtual caravan environment.
         :return: <float> x position at the virtual environment
         """
-        x_real = (self.get_x_position() - self.get_origin_x_position()) * sin(self.get_origin_direction() * pi / 180)
-        y_real = (self.get_y_position() - self.get_origin_y_position()) * cos(self.get_origin_direction() * pi / 180)
+        x_real = (
+            (self.get_x_position() - self.get_origin_x_position()) *
+            sin(self.get_origin_direction() * pi / 180)
+        )
+        y_real = (
+            (self.get_y_position() - self.get_origin_y_position()) *
+            cos(self.get_origin_direction() * pi / 180)
+        )
         return abs(x_real + y_real)
 
     def get_virtual_y_position(self):
@@ -222,9 +269,15 @@ class Message(object):
         Returns the x position of the virtual caravan environment.
         :return: <float> x position at the virtual environment
         """
-        x_real = - 1 * (self.get_x_position() - self.get_origin_x_position()) * cos(
-            self.get_origin_direction() * pi / 180)
-        y_real = (self.get_y_position() - self.get_origin_y_position()) * sin(self.get_origin_direction() * pi / 180)
+        x_real = (
+            - 1 * (self.get_x_position() - self.get_origin_x_position()) * cos(
+                self.get_origin_direction() * pi / 180
+            )
+        )
+        y_real = (
+            (self.get_y_position() - self.get_origin_y_position()) *
+            sin(self.get_origin_direction() * pi / 180)
+        )
         return x_real + y_real
 
     def get_origin_direction(self):
@@ -243,7 +296,8 @@ class Message(object):
 
     def set_depth(self, new_depth):
         """
-        Sets the depth of the car at the caravan. Function created for the supervisory level.
+        Sets the depth of the car at the caravan. Function created for the
+        supervisory level.
         :param new_depth: new depth of the car at the caravan.
         """
         self.caravan_depth = new_depth
@@ -257,8 +311,9 @@ class Message(object):
 
     def cross_path(self, other_car_lane, other_car_intention):
         """
-        Check if the path of one car crosses tih the path o f another. It is true if the other car is the same lane
-        or if the other car is in one of the perpendicular lanes.
+        Check if the path of one car crosses tih the path o f another. It is
+        true if the other car is the same lane or if the other car is in one of
+        the perpendicular lanes.
         :param other_car_intention: the intention of way of the other car
         :param other_car_lane: the lane at which the other car star its way.
         :return: True if the paths does not crosses, False otherwise.
@@ -267,16 +322,25 @@ class Message(object):
         self_intention = self.get_intention()
         lane_to_int_dict = {"l": 0, "s": 1, "r": 2}
         table0 = [[True, True, True], [True, True, True], [True, True, True]]
-        table1 = [[True, True, False], [True, True, False], [False, True, False]]
-        table2 = [[True, True, True], [True, False, False], [True, False, False]]
-        table3 = [[True, True, False], [True, True, True], [False, False, False]]
+        table1 = [
+            [True, True, False], [True, True, False], [False, True, False]
+        ]
+        table2 = [
+            [True, True, True], [True, False, False], [True, False, False]
+        ]
+        table3 = [
+            [True, True, False], [True, True, True], [False, False, False]
+        ]
         all_tables = [table0, table1, table2, table3]
-        return all_tables[(self_lane - other_car_lane) % 4][lane_to_int_dict[self_intention]][
-            lane_to_int_dict[other_car_intention]]
+        return all_tables[
+            (self_lane - other_car_lane) % 4
+        ][lane_to_int_dict[self_intention]][
+            lane_to_int_dict[other_car_intention]
+        ]
 
     def get_value(self):
         """
-        Get the value of the message. Depends of the class of the message. Used for sorting purposes.
+        Get the value of the message. Depends of the class of the message.
         :return: <int>
         """
         return self.value
@@ -298,9 +362,11 @@ class Message(object):
     def transmit(self, car_dict, transmitter_to_receiver_dict):
         """
         Transmit the message to all the cars that should receive this message
-        :param car_dict: list of cars as a dictionary with the name of the car as the key and the car as the value.
-        :param transmitter_to_receiver_dict: dictionary with the name of the transmitter as key and a list with the
-        names of the receivers as value.
+        :param car_dict: list of cars as a dictionary with the name of the car
+        as the key and the car as the value.
+        :param transmitter_to_receiver_dict: dictionary with the name of the
+            transmitter as key and a list with the names of the receivers as
+            value.
         :return: None
         """
         for car_name in transmitter_to_receiver_dict[self.get_name()]:
@@ -309,16 +375,19 @@ class Message(object):
 
 class InfoMessage(Message):
     """
-    Message used to update the info of the car that is being followed by another car.
+    Message used to update the info of the car that is being followed by
+    another car.
     """
     def process(self, car):
         """
-        Process the message. Sets the old message to be this new one, so the information of the car is updated.
+        Process the message. Sets the old message to be this new one, so the
+        information of the car is updated.
         :param car: car whose following car information will be updated.
         """
         if car.get_following_car_message().get_name() == self.get_name():
             car.set_following_car_message(self)
-        if car.is_second_at_charge and self.supervisor and self.get_name() not in car.faulty_cars_names:
+        if (car.is_second_at_charge and self.supervisor and
+                self.get_name() not in car.faulty_cars_names):
             car.reset_supervisor_counter()
         if car.is_supervisor:
             if self.get_name() in car.update_cars_at_intersection_counter:
@@ -327,31 +396,37 @@ class InfoMessage(Message):
 
 class NewCarMessage(Message):
     """
-    Message used to inform all the other cars that a new car has arrived at the intersection.
+    Message used to inform all the other cars that a new car has arrived at
+    the intersection.
     """
     def __init__(self, car):
         """
-        Initializer for this message. The only new information needed is the cars at the intersection.
+        Initializer for this message. The only new information needed is the
+        cars at the intersection.
         :param car: new car at the intersection..
         """
         super(self.__class__, self).__init__(car)
 
     def process(self, car):
         """
-        Process the message. Creates a new car with the information present at this message and add it to the list of
-        cars present at the intersection.
-        :param car: car to add a new car to the list of cars present at the intersection.
+        Process the message. Creates a new car with the information present at
+        this message and add it to the list of cars present at the
+        intersection.
+        :param car: car to add a new car to the list of cars present at the
+            intersection.
         """
         super(self.__class__, self).process(car)
         car.add_new_car(self)
 
     def transmit(self, car_dict, transmitter_to_receiver_dict):
         """
-        Overrides transmit of generic message. For this message class, all cars must receive the message.
-        :param car_dict: list of cars as a dictionary with the name of the car as the key and the car as the value.
-        :param transmitter_to_receiver_dict: dictionary with the name of the transmitter as key and a list with the
-        names of the receivers as value.
-        :return: None
+        Overrides transmit of generic message. For this message class, all cars
+        must receive the message.
+        :param car_dict: list of cars as a dictionary with the name of the car
+            as the key and the car as the value.
+        :param transmitter_to_receiver_dict: dictionary with the name of the
+            transmitter as key and a list with the names of the receivers as
+            value.
         """
         for car in car_dict.values():
             self.process(car)
@@ -359,12 +434,13 @@ class NewCarMessage(Message):
 
 class LeftIntersectionMessage(Message):
     """
-    Message used to inform all the other cars that a car has left the intersection.
+    Message used to inform all the other cars that a car has left the
+    intersection.
     """
     def process(self, car):
         """
-        Process the message. Deletes the car that created this message from the list of cars present at the
-        intersection.
+        Process the message. Deletes the car that created this message from the
+        list of cars present at the intersection.
         :param car: car to update information
         """
         super(LeftIntersectionMessage, self).process(car)
@@ -372,11 +448,13 @@ class LeftIntersectionMessage(Message):
 
     def transmit(self, car_dict, transmitter_to_receiver_dict):
         """
-        Overrides transmit of generic message. For this message class, all cars must receive the message.
-        :param car_dict: list of cars as a dictionary with the name of the car as the key and the car as the value.
-        :param transmitter_to_receiver_dict: dictionary with the name of the transmitter as key and a list with the
-        names of the receivers as value.
-        :return: None
+        Overrides transmit of generic message. For this message class, all cars
+        must receive the message.
+        :param car_dict: list of cars as a dictionary with the name of the car
+            as the key and the car as the value.
+        :param transmitter_to_receiver_dict: dictionary with the name of the
+            transmitter as key and a list with the names of the receivers as
+            value.
         """
         for car in car_dict.values():
             self.process(car)
@@ -389,22 +467,26 @@ class SupervisorLeftIntersectionMessage(LeftIntersectionMessage):
 
     def process(self, car):
         """
-        Process the message. Makes the car the new supervisor and gives it all the information needs to work correctly.
+        Process the message. Makes the car the new supervisor and gives it all
+        the information needs to work correctly.
         :param car: new supervisor.
         """
         super(SupervisorLeftIntersectionMessage, self).process(car)
-        if car.is_second_at_charge and self.get_name() not in car.faulty_cars_names:
+        if (car.is_second_at_charge and self.get_name() not in
+                car.faulty_cars_names):
             car.set_supervisor_left_intersection(True)
         elif self.get_name() in car.get_liar_supervisor_names():
             car.get_liar_supervisor_names().remove(self.get_name())
 
     def transmit(self, car_dict, transmitter_to_receiver_dict):
         """
-        Overrides transmit of generic message. For this message class, all cars must receive the message.
-        :param car_dict: list of cars as a dictionary with the name of the car as the key and the car as the value.
-        :param transmitter_to_receiver_dict: dictionary with the name of the transmitter as key and a list with the
-        names of the receivers as value.
-        :return: None
+        Overrides transmit of generic message. For this message class, all cars
+        must receive the message.
+        :param car_dict: list of cars as a dictionary with the name of the car
+            as the key and the car as the value.
+        :param transmitter_to_receiver_dict: dictionary with the name of the
+            transmitter as key and a list with the names of the receivers as
+            value.
         """
         for car in car_dict.values():
             self.process(car)
@@ -416,9 +498,11 @@ class FollowingCarMessage(Message):
     """
     def __init__(self, car, following_car_name, coordinator_name):
         """
-        Initializer for this message. The only new information needed is the cars at the intersection.
+        Initializer for this message. The only new information needed is the
+        cars at the intersection.
         :param car: supervisor leaving the intersection.
-        :param following_car_name: name of the car that must follow the car that created the message.
+        :param following_car_name: name of the car that must follow the car
+        that created the message.
         """
         super(self.__class__, self).__init__(car)
         self.following_car_name = following_car_name
@@ -434,25 +518,29 @@ class FollowingCarMessage(Message):
 
     def get_following_car_name(self):
         """
-        Get the name of the car that the car receptor of this message must follow.
+        Get the name of the car that the car receptor of this message must
+        follow.
         :return: <int> car name
         """
         return self.following_car_name
 
     def transmit(self, car_dict, transmitter_to_receiver_dict):
         """
-        Overrides transmit of generic message. For this message class, all cars must receive the message.
-        :param car_dict: list of cars as a dictionary with the name of the car as the key and the car as the value.
-        :param transmitter_to_receiver_dict: dictionary with the name of the transmitter as key and a list with the
-        names of the receivers as value.
-        :return: None
+        Overrides transmit of generic message. For this message class, all cars
+        must receive the message.
+        :param car_dict: list of cars as a dictionary with the name of the car
+            as the key and the car as the value.
+        :param transmitter_to_receiver_dict: dictionary with the name of the
+            transmitter as key and a list with the names of the receivers as
+            value.
         """
         for car in car_dict.values():
             self.process(car)
 
     def get_coordinator_name(self):
         """
-        Returns the name of the car that create this message and process the coordination.
+        Returns the name of the car that create this message and process the
+        coordination.
         :return: <int> name of the coordinator.
         """
         return self.coordinator_name
@@ -461,10 +549,12 @@ class FollowingCarMessage(Message):
 class SecondAtChargeMessage(Message):
     def __init__(self, car, second_at_charge_name):
         """
-        Initializer for SecondAtChargeMessage. The info needes for the second at charge is the list of car present
+        Initializer for SecondAtChargeMessage. The info needes for the second
+        at charge is the list of car present
         at the intersection of the supervisor car.
         :param car: supervisor leaving the intersection.
-        :param second_at_charge_name: name of the car that will be the second at charge.
+        :param second_at_charge_name: name of the car that will be the second
+            at charge.
         """
         super(self.__class__, self).__init__(car)
         self.second_at_charge_name = second_at_charge_name
@@ -474,10 +564,10 @@ class SecondAtChargeMessage(Message):
 
     def process(self, car):
         """
-        Process the message for a car. If the name of the car is the same as the second at charge name stored in the
-        message, that car will be made the second at charge.
-        :param car: car to process the message
-        :return: None
+        Process the message for a car. If the name of the car is the same as
+        the second at charge name stored in the message, that car will be made
+        the second at charge.
+        :param car: car to process the message.
         """
         super(SecondAtChargeMessage, self).process(car)
         if car.is_second_at_charge:
@@ -508,11 +598,13 @@ class SecondAtChargeMessage(Message):
 
     def transmit(self, car_dict, transmitter_to_receiver_dict):
         """
-        Overrides transmit of generic message. For this message class, all cars must receive the message.
-        :param car_dict: list of cars as a dictionary with the name of the car as the key and the car as the value.
-        :param transmitter_to_receiver_dict: dictionary with the name of the transmitter as key and a list with the
-        names of the receivers as value.
-        :return: None
+        Overrides transmit of generic message. For this message class, all
+        cars must receive the message.
+        :param car_dict: list of cars as a dictionary with the name of the car
+            as the key and the car as the value.
+        :param transmitter_to_receiver_dict: dictionary with the name of the
+            transmitter as key and a list with the names of the receivers as
+            value.
         """
         self.process(car_dict[self.get_second_at_charge_name()])
 
@@ -534,8 +626,9 @@ class NewSupervisorMessage(Message):
 
     def process(self, car):
         """
-        Process the message for a car. If the name of the car is the same as the second at charge name stored in the
-        message, that car will be made the second at charge.
+        Process the message for a car. If the name of the car is the same as
+        the second at charge name stored in the message, that car will be made
+        the second at charge.
         :param car: car to process the message
         :return: None
         """
@@ -566,11 +659,13 @@ class NewSupervisorMessage(Message):
 
     def transmit(self, car_dict, transmitter_to_receiver_dict):
         """
-        Overrides transmit of generic message. For this message class, all cars must receive the message.
-        :param car_dict: list of cars as a dictionary with the name of the car as the key and the car as the value.
-        :param transmitter_to_receiver_dict: dictionary with the name of the transmitter as key and a list with the
-        names of the receivers as value.
-        :return: None
+        Overrides transmit of generic message. For this message class, all cars
+        must receive the message.
+        :param car_dict: list of cars as a dictionary with the name of the car
+            as the key and the car as the value.
+        :param transmitter_to_receiver_dict: dictionary with the name of the
+            transmitter as key and a list with the names of the receivers as
+            value.
         """
         self.process(car_dict[self.get_new_supervisor_name()])
         self.process(car_dict[self.get_name()])
@@ -578,14 +673,15 @@ class NewSupervisorMessage(Message):
 
 class FaultyCoordinationMessage(Message):
     """
-    Message generated by a Second At Charge car saying that the coordinator did a faulty coordination. Every car that
-    receives this message will do the process of adding and coordinating cars as if there where no cars at the
+    Message generated by a Second At Charge car saying that the coordinator
+    did a faulty coordination. Every car that receives this message will do the
+    process of adding and coordinating cars as if there where no cars at the
     intersection.
     """
     def __init__(self, car, supervisor_message, second_at_charge_message):
         """
-        The information required for the other cars to do the process of coordinate a car will be stored in this
-        message.
+        The information required for the other cars to do the process of
+        coordinate a car will be stored in this message.
         :param car: car that generated the message.
         """
         super(self.__class__, self).__init__(car)
@@ -613,15 +709,18 @@ class FaultyCoordinationMessage(Message):
 
     def get_second_at_charge_name(self):
         """
-        Gets the name of the Second at charge car that created the FaultyCoordinationMessage
+        Gets the name of the Second at charge car that created the
+        FaultyCoordinationMessage
         :return: <int>
         """
         return self.second_at_charge_name
 
     def get_cars_at_intersection(self):
         """
-        Return all the cars that were present at the intersection when the FaultyCoordinatorMessage was created.
-        :return: <dict> a dictionary with the name of a car by key and the car by value.
+        Return all the cars that were present at the intersection when the
+        FaultyCoordinatorMessage was created.
+        :return: <dict> a dictionary with the name of a car by key and the car
+            by value.
         """
         return self.cars_at_intersection
 
@@ -634,7 +733,8 @@ class FaultyCoordinationMessage(Message):
 
     def get_following_car_name(self):
         """
-        Returns the name of the car that the faulty coordinated car should follow.
+        Returns the name of the car that the faulty coordinated car should
+        follow.
         :return: <int>
         """
         return self.following_car_name
@@ -642,29 +742,32 @@ class FaultyCoordinationMessage(Message):
     def get_supervisor_message(self):
         """
         Return the original coordination message of the supervisor.
-        :return: <FollowingCarMessage> Message of coordination generated by the supervisor
+        :return: <FollowingCarMessage> Message of coordination generated by the
+            supervisor
         """
         return self.supervisor_message
 
     def get_second_at_charge_message(self):
         """
         Return the "corrected" coordination message of the second at charge.
-        :return: <FollowingCarMessage> Message of coordination generated by the second at charge
+        :return: <FollowingCarMessage> Message of coordination generated by the
+            second at charge
         """
         return self.second_at_charge_message
 
 
 class CorrectedCoordinationMessage(Message):
     """
-    Message generated for every car that isn't a supervisor or second at charge after a FaultyCoordinationMessage has
-    been received. The message posses the name of the (possible faulty) coordinator and second at charge, the name of
+    Message generated for every car that isn't a supervisor or second at charge
+    after a FaultyCoordinationMessage has been received. The message posses the
+    name of the (possible faulty) coordinator and second at charge, the name of
     the "bad" coordinated car and the "correct" result.
     """
 
     def __init__(self, car):
         """
-        The information required for the other cars to do the process of coordinate a car will be stored in this
-        message.
+        The information required for the other cars to do the process of
+        coordinate a car will be stored in this message.
         :param car: car that generated the message.
         """
         super(self.__class__, self).__init__(car)
@@ -689,7 +792,8 @@ class CorrectedCoordinationMessage(Message):
 
     def get_second_at_charge_name(self):
         """
-        Gets the name of the Second at charge car that created the FaultyCoordinationMessage
+        Gets the name of the Second at charge car that created the
+        FaultyCoordinationMessage
         :return: <int>
         """
         return self.second_at_charge_name
@@ -703,7 +807,8 @@ class CorrectedCoordinationMessage(Message):
 
     def get_following_car_name(self):
         """
-        Returns the name of the car that the faulty coordinated car should follow.
+        Returns the name of the car that the faulty coordinated car should
+        follow.
         :return: <int>
         """
         return self.following_car_name
