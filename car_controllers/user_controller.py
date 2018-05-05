@@ -5,7 +5,8 @@ def car_user_input(user_inputs, actual_values):
     """
     Function so a user can move a car with the keyboard.
     :param user_inputs: pygame inputs.
-    :param actual_values: actual values of the right, left, up and down variables,
+    :param actual_values: actual values of the right, left, up and down
+        variables,
     :return: updated values.
     """
     k_right, k_left, k_up, k_down = actual_values
